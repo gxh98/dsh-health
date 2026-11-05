@@ -492,10 +492,11 @@
     box-shadow:0 22px 46px -26px rgba(15,55,110,.55);
     -webkit-touch-callout:default;
     user-select:auto;
+    cursor:zoom-in;
   }
   .save-hint{
     display:flex;align-items:center;justify-content:center;gap:5px;
-    margin:11px 0 0;font-size:10.5px;color:#8FA2B8;text-align:center;
+    margin:11px 0 0;font-size:10.5px;line-height:1.55;color:#8FA2B8;text-align:center;
   }
   .save-btn{
     width:100%;height:51px;margin-top:13px;border:0;border-radius:15px;cursor:pointer;
@@ -507,7 +508,57 @@
   }
   .save-btn:hover{filter:brightness(1.04)}
   .save-btn:active{transform:scale(.986)}
+  .save-btn[disabled]{opacity:.72;cursor:wait;transform:none}
   .save-btn svg{width:16px;height:16px}
+  .download-link{
+    display:block;margin:8px auto 0;padding:6px 8px;
+    border:0;background:transparent;color:#7A93AD;
+    font-size:10.5px;line-height:1.5;text-align:center;cursor:pointer;
+    text-decoration:underline;text-underline-offset:3px;
+  }
+  .download-link:hover{color:#0A6DFF}
+
+  /* 手机长按保存大图 */
+  .card-viewer{
+    position:fixed;inset:0;z-index:80;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:calc(18px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom));
+    background:rgba(8,20,36,.95);
+    backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+    animation:fadeIn .2s ease;
+  }
+  .card-viewer[hidden]{display:none !important}
+  .viewer-close{
+    position:absolute;top:calc(14px + env(safe-area-inset-top));right:14px;
+    width:38px;height:38px;border-radius:50%;
+    border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.12);color:#fff;
+    font-size:21px;line-height:1;display:grid;place-items:center;cursor:pointer;
+  }
+  .viewer-close:hover{background:rgba(255,255,255,.2)}
+  .viewer-stage{
+    flex:1;min-height:0;width:100%;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .viewer-stage img{
+    display:block;max-width:100%;max-height:100%;
+    border-radius:10px;
+    box-shadow:0 30px 70px -30px rgba(0,0,0,.8);
+    -webkit-touch-callout:default;
+    user-select:auto;
+  }
+  .viewer-hint{
+    flex:none;margin:14px 0 10px;color:#E6F1FF;
+    font-size:12px;line-height:1.55;text-align:center;
+    max-width:calc(100vw - 36px);
+  }
+  .viewer-download{
+    flex:none;height:40px;padding:0 16px;
+    border:1px solid rgba(255,255,255,.18);border-radius:12px;
+    background:rgba(255,255,255,.1);color:#C9E3FF;
+    font-size:11.5px;font-weight:600;cursor:pointer;
+  }
+  .viewer-download:hover{background:rgba(255,255,255,.18)}
 
   /* 提示 */
   .toast{
@@ -732,16 +783,27 @@
     <div class="card-preview">
       <img id="cardImg" alt="今日记录卡预览">
     </div>
-    <p class="save-hint">手机可长按上方图片保存到相册</p>
+    <p class="save-hint" id="saveHint">保存的 PNG 与上方预览完全一致。</p>
     <button type="button" class="save-btn" id="saveCard">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg id="saveIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 3v12"/>
         <path d="m7.5 10.5 4.5 4.5 4.5-4.5"/>
         <path d="M4.5 17.5v1A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.5-2.5v-1"/>
       </svg>
-      保存图片（PNG）
+      <span id="saveCardLabel">保存图片（PNG）</span>
     </button>
+    <button type="button" class="download-link" id="downloadCard" hidden>下载 PNG 文件</button>
   </div>
+</div>
+
+<!-- 手机大图：长按存入相册 -->
+<div class="card-viewer" id="cardViewer" role="dialog" aria-modal="true" aria-labelledby="viewerHint" hidden>
+  <button type="button" class="viewer-close" id="viewerClose" aria-label="关闭大图">×</button>
+  <div class="viewer-stage">
+    <img id="viewerImg" alt="今日记录卡大图">
+  </div>
+  <p class="viewer-hint" id="viewerHint">长按图片 → 选择「保存图片 / 存储到照片」</p>
+  <button type="button" class="viewer-download" id="viewerDownload">下载 PNG 文件</button>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -876,6 +938,20 @@
   var currentDay = dateKey();
   var lastFocus = null;
   var cardDataUrl = '';
+  var cardFile = null;
+  var sharingCard = false;
+
+  var IS_MOBILE = (function () {
+    var ua = navigator.userAgent || '';
+    if (/Android|iPhone|iPad|iPod|Mobile|HarmonyOS/i.test(ua)) return true;
+    return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  })();
+  var IS_IOS = (function () {
+    var ua = navigator.userAgent || '';
+    return /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  })();
+  var IS_WECHAT = /MicroMessenger/i.test(navigator.userAgent || '');
 
   function persistHint() {
     return STORAGE_OK ? '' : '（预览模式：刷新后会丢失）';
@@ -1718,14 +1794,172 @@
     return canvas.toDataURL('image/png');
   }
 
-  function openCardModal() {
-    cardDataUrl = drawCard();
-    var img = $('#cardImg');
-    if (cardDataUrl) {
-      img.src = cardDataUrl;
-      img.alt = '今日记录卡：' + state.nickname + '的饮水与运动记录';
+  function cardFileName() {
+    var d = new Date();
+    return 'DSH健康记录卡_' + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '.png';
+  }
+
+  function dataURLToBlob(dataUrl) {
+    var parts = String(dataUrl).split(',');
+    var mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/png';
+    var binary = atob(parts[1] || '');
+    var len = binary.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
+  }
+
+  function makeCardFile() {
+    if (!cardDataUrl) return null;
+    try {
+      return new File([dataURLToBlob(cardDataUrl)], cardFileName(), { type: 'image/png' });
+    } catch (err) {
+      return null;
     }
-    openModal('cardModal');
+  }
+
+  function canShareCardFile(file) {
+    if (!file || !navigator.share || !navigator.canShare) return false;
+    try {
+      return !!(navigator.canShare({ files: [file] }));
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function setSaveIcon(mode) {
+    var icon = $('#saveIcon');
+    if (!icon) return;
+    if (mode === 'share') {
+      icon.innerHTML = '<path d="M12 15V4"/><path d="m7.5 8.5 4.5-4.5 4.5 4.5"/><path d="M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/>';
+    } else {
+      icon.innerHTML = '<path d="M12 3v12"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4.5 17.5v1A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.5-2.5v-1"/>';
+    }
+  }
+
+  function configureCardSaveUI() {
+    var hint = $('#saveHint');
+    var label = $('#saveCardLabel');
+    var download = $('#downloadCard');
+    var file = makeCardFile();
+    cardFile = file;
+    var shareOK = IS_MOBILE && !IS_WECHAT && canShareCardFile(file);
+
+    if (!IS_MOBILE) {
+      label.textContent = '保存图片（PNG）';
+      hint.textContent = '保存的 PNG 与上方预览完全一致，会下载到浏览器默认下载位置。';
+      download.hidden = true;
+      setSaveIcon('download');
+      return;
+    }
+
+    label.textContent = '保存到相册';
+    download.hidden = false;
+    setSaveIcon('share');
+    if (shareOK) {
+      hint.textContent = '点保存后，在手机系统面板里选择「存储图像 / 保存到相册」；也可以长按图片。';
+    } else if (IS_WECHAT) {
+      hint.textContent = '微信里请长按上方图片 → 选择「保存图片」；也可以点下方「下载 PNG 文件」。';
+    } else {
+      hint.textContent = '手机浏览器不能直接把图片写进相册：点保存会打开大图，长按图片选择「保存图片 / 存储到照片」。';
+    }
+  }
+
+  function openCardViewer() {
+    if (!cardDataUrl) {
+      cardDataUrl = drawCard();
+    }
+    if (!cardDataUrl) {
+      showToast('图片生成失败，请刷新后再试');
+      return;
+    }
+    var viewer = $('#cardViewer');
+    var img = $('#viewerImg');
+    img.src = cardDataUrl;
+    img.alt = '今日记录卡大图：' + (state.nickname || DEFAULT_NICKNAME) + '的饮水与运动记录';
+    var hint = $('#viewerHint');
+    if (IS_WECHAT) {
+      hint.textContent = '长按图片 → 选择「保存图片」，就会进入手机相册';
+    } else if (IS_IOS) {
+      hint.textContent = '长按图片 → 选择「存储到照片」，就会进入手机相册';
+    } else {
+      hint.textContent = '长按图片 → 选择「保存图片 / 下载图片」，再打开手机相册确认';
+    }
+    viewer.hidden = false;
+    document.body.classList.add('modal-open');
+    document.body.style.overflow = 'hidden';
+    setTimeout(function () {
+      var close = $('#viewerClose');
+      if (close) close.focus();
+    }, 40);
+  }
+
+  function closeCardViewer() {
+    var viewer = $('#cardViewer');
+    if (!viewer || viewer.hidden) return;
+    viewer.hidden = true;
+    if (!$$('.modal:not([hidden])').length) {
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+    }
+    var save = $('#saveCard');
+    if (save) save.focus();
+  }
+
+  function downloadCardImage() {
+    if (!cardDataUrl) {
+      cardDataUrl = drawCard();
+    }
+    if (!cardDataUrl) {
+      showToast('图片生成失败，请刷新后再试');
+      return;
+    }
+    try {
+      var url = URL.createObjectURL(dataURLToBlob(cardDataUrl));
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = cardFileName();
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+      showToast(IS_MOBILE
+        ? '已发起下载；如果「文件 / 下载」里也没有，请长按图片保存'
+        : '图片已生成，正在下载');
+    } catch (err) {
+      showToast('下载失败，请长按图片保存');
+    }
+  }
+
+  function shareCardFile(file) {
+    if (sharingCard) return;
+    sharingCard = true;
+    var btn = $('#saveCard');
+    if (btn) btn.disabled = true;
+    var promise;
+    try {
+      promise = navigator.share({
+        files: [file],
+        title: '今日记录卡 · DSH-昊哥健康管理',
+        text: '我的今日饮水与运动记录'
+      });
+    } catch (err) {
+      sharingCard = false;
+      if (btn) btn.disabled = false;
+      showToast('系统面板打不开，请长按图片保存');
+      openCardViewer();
+      return;
+    }
+    Promise.resolve(promise).then(function () {
+      showToast('已处理完成；如相册没看到，请长按预览图保存');
+    }).catch(function (err) {
+      if (err && err.name === 'AbortError') return;
+      showToast('系统保存面板没打开，请长按图片保存');
+      openCardViewer();
+    }).then(function () {
+      sharingCard = false;
+      if (btn) btn.disabled = false;
+    });
   }
 
   function saveCardImage() {
@@ -1736,15 +1970,28 @@
       showToast('图片生成失败，请刷新后再试');
       return;
     }
-    var d = new Date();
-    var name = 'DSH健康记录卡_' + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '.png';
-    var link = document.createElement('a');
-    link.href = cardDataUrl;
-    link.download = name;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    showToast('图片已生成，正在保存');
+    if (!IS_MOBILE) {
+      downloadCardImage();
+      return;
+    }
+    var file = cardFile || makeCardFile();
+    if (!IS_WECHAT && canShareCardFile(file)) {
+      shareCardFile(file);
+      return;
+    }
+    openCardViewer();
+  }
+
+  function openCardModal() {
+    cardDataUrl = drawCard();
+    cardFile = null;
+    var img = $('#cardImg');
+    if (cardDataUrl) {
+      img.src = cardDataUrl;
+      img.alt = '今日记录卡：' + state.nickname + '的饮水与运动记录';
+    }
+    configureCardSaveUI();
+    openModal('cardModal');
   }
 
   /* ============ 事件绑定 ============ */
@@ -1788,6 +2035,13 @@
 
     $('#openCard').addEventListener('click', openCardModal);
     $('#saveCard').addEventListener('click', saveCardImage);
+    $('#downloadCard').addEventListener('click', downloadCardImage);
+    $('#cardImg').addEventListener('click', openCardViewer);
+    $('#viewerClose').addEventListener('click', closeCardViewer);
+    $('#viewerDownload').addEventListener('click', downloadCardImage);
+    $('#cardViewer').addEventListener('click', function (ev) {
+      if (ev.target === this) closeCardViewer();
+    });
 
     $$('[data-close]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -1797,10 +2051,30 @@
 
     document.addEventListener('keydown', function (ev) {
       if (ev.key === 'Escape') {
+        var viewer = $('#cardViewer');
+        if (viewer && !viewer.hidden) {
+          closeCardViewer();
+          return;
+        }
         closeAllModals();
         return;
       }
       if (ev.key === 'Tab') {
+        var viewer = $('#cardViewer');
+        if (viewer && !viewer.hidden) {
+          var viewerFocusable = getFocusable(viewer);
+          if (!viewerFocusable.length) return;
+          var viewerFirst = viewerFocusable[0];
+          var viewerLast = viewerFocusable[viewerFocusable.length - 1];
+          if (ev.shiftKey && document.activeElement === viewerFirst) {
+            ev.preventDefault();
+            viewerLast.focus();
+          } else if (!ev.shiftKey && document.activeElement === viewerLast) {
+            ev.preventDefault();
+            viewerFirst.focus();
+          }
+          return;
+        }
         var open = $('.modal:not([hidden])');
         if (!open) return;
         var sheet = $('.sheet', open);
