@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#EEF3F9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>DSH-昊哥健康管理 · 喝水与运动记录</title>
+<meta name="description" content="一个清爽的手机端喝水与运动记录小站：点一次记 250 ml 饮水，记录跑步、散步、骑行、拉伸、瑜伽，并生成今日记录卡。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2359C2FF'/%3E%3Cstop offset='1' stop-color='%230A6DFF'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M32 12c7.2 8.7 12 14.6 12 20.5A12 12 0 1 1 20 32.5C20 26.6 24.8 20.7 32 12Z' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#EEF3F9;
+    --card:#FFFFFF;
+    --ink:#12233B;
+    --ink-2:#4E6480;
+    --ink-3:#879AB2;
+    --line:#E7EEF8;
+    --water:#0A84FF;
+    --water-deep:#0064D8;
+    --water-soft:#EAF4FF;
+    --radius:26px;
+    --shadow:0 18px 44px -24px rgba(20,70,140,.28), 0 2px 10px rgba(20,70,140,.03);
+    --font-ui:"SF Pro Text",-apple-system,BlinkMacSystemFont,"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+    --font-num:"SF Pro Display","DIN Alternate","Bahnschrift","Segoe UI",-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(1100px 560px at 50% -12%, rgba(10,132,255,.11), transparent 62%),
+      radial-gradient(760px 520px at 108% 16%, rgba(91,108,245,.07), transparent 60%),
+      radial-gradient(720px 480px at -12% 62%, rgba(31,185,138,.05), transparent 62%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--font-ui);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  button{font-family:inherit;color:inherit;touch-action:manipulation}
+  button,input{font-size:inherit}
+  ::selection{background:#CFE8FF}
+  :focus-visible{outline:2px solid var(--water);outline-offset:2px;border-radius:8px}
+  [hidden]{display:none !important}
+
+  .shell{
+    width:min(100% - 32px, 500px);
+    margin:0 auto;
+    padding:18px 0 calc(40px + env(safe-area-inset-bottom));
+  }
+  @media (max-width:430px){
+    .shell{width:calc(100% - 24px);padding-top:14px}
+  }
+
+  /* ---------- 顶部品牌 ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:2px 2px 16px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;min-width:0}
+  .brand-logo{
+    width:36px;height:36px;border-radius:12px;flex:none;
+    display:grid;place-items:center;
+    background:linear-gradient(140deg,#57BEFF,#0A6DFF);
+    box-shadow:0 8px 18px -8px rgba(10,109,255,.65), inset 0 1px 0 rgba(255,255,255,.42);
+  }
+  .brand-logo svg{width:19px;height:19px;display:block}
+  .brand-text{min-width:0}
+  .brand-name{
+    margin:0;font-size:14.5px;font-weight:750;letter-spacing:.2px;color:#152B47;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .brand-sub{
+    margin:3px 0 0;font-size:8.5px;font-weight:700;letter-spacing:2.2px;
+    color:#93A7C0;text-transform:uppercase;white-space:nowrap;
+  }
+  .date-chip{
+    flex:none;text-align:right;
+    background:rgba(255,255,255,.72);
+    border:1px solid rgba(226,235,247,.9);
+    border-radius:13px;
+    padding:6px 11px 7px;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+    box-shadow:0 4px 14px -10px rgba(20,70,140,.25);
+  }
+  .date-chip b{display:block;font-size:12.5px;font-weight:700;color:#28405E;line-height:1.2;font-variant-numeric:tabular-nums}
+  .date-chip span{display:block;font-size:9.5px;color:#8CA0B9;margin-top:2px;letter-spacing:.6px}
+
+  /* ---------- 通用卡片 ---------- */
+  .card{
+    position:relative;
+    background:var(--card);
+    border:1px solid rgba(226,235,247,.9);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:20px;
+    margin:0 0 14px;
+    overflow:hidden;
+  }
+  @media (max-width:390px){
+    .card{padding:17px;border-radius:23px}
+  }
+
+  /* ---------- 个人信息 ---------- */
+  .profile{display:flex;align-items:center;gap:14px;padding:17px 18px}
+  .avatar{
+    width:64px;height:64px;flex:none;
+    display:grid;place-items:center;
+    font-size:33px;line-height:1;
+    border-radius:22px;
+    background:
+      radial-gradient(120% 120% at 30% 20%, #FFFFFF 0%, #E9F5FF 45%, #D8ECFF 100%);
+    border:1px solid rgba(255,255,255,.95);
+    box-shadow:0 12px 24px -12px rgba(10,132,255,.45), inset 0 0 0 1px rgba(198,224,250,.55);
+  }
+  .profile-info{min-width:0;flex:1}
+  .name-line{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .profile-info h1{
+    margin:0;font-size:22px;line-height:1.2;font-weight:800;letter-spacing:.2px;
+    color:#132842;min-width:0;overflow-wrap:anywhere;
+  }
+  .edit-btn{
+    display:inline-flex;align-items:center;gap:4px;
+    height:27px;padding:0 10px 0 8px;
+    border:1px solid #DCEAFB;border-radius:999px;
+    background:#F3F9FF;color:#3E7DB8;
+    font-size:11px;font-weight:700;cursor:pointer;
+    transition:background .18s,color .18s,border-color .18s,transform .18s;
+  }
+  .edit-btn svg{width:11px;height:11px;display:block}
+  .edit-btn:hover{background:#E7F3FF;border-color:#C6E2FF;color:#0A6DFF}
+  .edit-btn:active{transform:scale(.95)}
+  .greeting{
+    margin:7px 0 0;font-size:11.5px;line-height:1.5;color:#8498B0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+
+  /* ---------- 饮水 ---------- */
+  .water-card::before{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:
+      radial-gradient(120% 90% at 88% -14%, rgba(10,132,255,.12), transparent 58%),
+      linear-gradient(180deg, rgba(246,251,255,.9), rgba(255,255,255,0) 34%);
+  }
+  .water-card > *{position:relative}
+  .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .eyebrow{
+    margin:0;font-size:9px;font-weight:800;letter-spacing:2.4px;color:#96AAC3;
+    text-transform:uppercase;
+  }
+  .card-head h2{
+    margin:5px 0 0;font-size:19px;line-height:1.25;font-weight:800;letter-spacing:.2px;color:#162C49;
+  }
+  .goal-tag{
+    flex:none;display:inline-flex;align-items:center;height:25px;padding:0 10px;
+    border-radius:999px;background:var(--water-soft);color:#0A6DFF;
+    font-size:10.5px;font-weight:700;letter-spacing:.2px;
+    border:1px solid #D6EAFF;white-space:nowrap;
+  }
+  .water-body{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    margin:16px 0 15px;
+  }
+  .ring-wrap{position:relative;width:138px;height:138px;flex:none}
+  .ring{width:100%;height:100%;display:block;overflow:visible}
+  .ring-track{fill:none;stroke:#EAF2FC;stroke-width:9}
+  .ring-fill{
+    fill:none;stroke:url(#ringGrad);stroke-width:9;stroke-linecap:round;
+    stroke-dasharray:377;stroke-dashoffset:377;
+    transition:stroke-dashoffset .9s cubic-bezier(.22,.8,.24,1);
+  }
+  .water-level{transition:transform .9s cubic-bezier(.22,.8,.24,1)}
+  .wave{fill:#CBE7FF;opacity:.92;animation:waveShift 7s linear infinite}
+  @keyframes waveShift{from{transform:translateX(0)}to{transform:translateX(-140px)}}
+  .ring-label{
+    position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:1px;pointer-events:none;
+  }
+  .ring-label strong{
+    font-family:var(--font-num);font-size:26px;line-height:1;font-weight:800;
+    letter-spacing:-.6px;color:#0B5FCB;font-variant-numeric:tabular-nums;
+  }
+  .ring-label span{font-size:8.5px;font-weight:700;letter-spacing:1.6px;color:#7FA6CF;margin-top:3px}
+  .water-stats{text-align:right;min-width:0}
+  .water-total{
+    margin:0;font-family:var(--font-num);font-size:44px;line-height:.95;
+    font-weight:750;letter-spacing:-1.4px;color:#0B2E5E;
+    font-variant-numeric:tabular-nums;white-space:nowrap;
+  }
+  .water-total em{font-style:normal;font-size:13px;font-weight:700;letter-spacing:0;color:#8298B2;margin-left:4px}
+  .water-remain{
+    margin:10px 0 0;font-size:12.5px;font-weight:700;line-height:1.35;color:#0A84FF;
+    font-variant-numeric:tabular-nums;
+  }
+  .water-note{margin:6px 0 0;font-size:10.5px;color:#94A8BF;font-variant-numeric:tabular-nums}
+  .water-total.pop{animation:pop .38s cubic-bezier(.2,1.4,.4,1)}
+  @keyframes pop{0%{transform:scale(1)}42%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+  .drink-btn{
+    width:100%;height:56px;border:0;border-radius:18px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    color:#fff;font-size:15px;font-weight:750;letter-spacing:.2px;
+    background:linear-gradient(135deg,#3FB1FF 0%,#0A7CFF 48%,#0668E8 100%);
+    box-shadow:0 16px 28px -14px rgba(10,124,255,.72), inset 0 1px 0 rgba(255,255,255,.4);
+    position:relative;overflow:hidden;
+    transition:transform .18s ease, box-shadow .22s ease, filter .18s;
+  }
+  .drink-btn::after{
+    content:"";position:absolute;top:-70%;left:-30%;width:45%;height:240%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.22),transparent);
+    transform:rotate(16deg);pointer-events:none;
+  }
+  .drink-btn:hover{filter:saturate(1.05) brightness(1.02)}
+  .drink-btn:active{transform:scale(.976);box-shadow:0 10px 20px -12px rgba(10,124,255,.7)}
+  .drink-btn .plus{
+    width:22px;height:22px;border-radius:50%;flex:none;
+    display:grid;place-items:center;
+    background:rgba(255,255,255,.2);
+    font-size:17px;font-weight:400;line-height:1;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);
+  }
+  .drink-btn b{
+    font-size:12px;font-weight:750;letter-spacing:.3px;
+    background:rgba(255,255,255,.17);border-radius:8px;padding:3px 7px;
+  }
+  .float-plus{
+    position:absolute;z-index:5;pointer-events:none;
+    font-family:var(--font-num);font-size:13px;font-weight:800;color:#0A84FF;
+    animation:floatUp .95s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+  @keyframes floatUp{
+    0%{opacity:0;transform:translateY(6px) scale(.9)}
+    22%{opacity:1}
+    100%{opacity:0;transform:translateY(-34px) scale(1.05)}
+  }
+  .water-log{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+  .water-chip{
+    display:inline-flex;align-items:center;gap:4px;
+    height:30px;padding:0 5px 0 10px;border-radius:999px;
+    background:#F3F9FF;border:1px solid #DEEDFF;color:#3E6F9F;
+    font-size:10.5px;font-weight:650;font-variant-numeric:tabular-nums;
+  }
+  .water-chip time{letter-spacing:.2px}
+  .water-chip .x{
+    width:24px;height:24px;border:0;border-radius:50%;background:transparent;
+    color:#93B5D6;font-size:14px;line-height:1;display:grid;place-items:center;
+    cursor:pointer;transition:background .15s,color .15s;
+  }
+  .water-chip .x:hover{background:#E1F0FF;color:#0A6DFF}
+
+  /* ---------- 运动 ---------- */
+  .ex-count{
+    flex:none;height:25px;display:inline-flex;align-items:center;padding:0 10px;
+    border-radius:999px;background:#F4F8FC;color:#7C90A8;font-size:10.5px;font-weight:700;
+    border:1px solid #E9F0F8;white-space:nowrap;
+  }
+  .chips{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:6px;
+    margin:16px 0 12px;
+  }
+  .chip{
+    display:flex;align-items:center;justify-content:center;gap:5px;
+    height:40px;padding:0 2px;border-radius:12px;border:1px solid #E7EEF8;
+    background:#FBFCFE;color:#5B7089;font-size:12px;font-weight:650;
+    cursor:pointer;transition:background .16s,border-color .16s,color .16s,box-shadow .16s,transform .16s;
+    white-space:nowrap;
+  }
+  .chip .dot{width:6px;height:6px;border-radius:50%;background:var(--c);flex:none}
+  .chip:hover{background:#F4F9FF;border-color:#DCEAF9}
+  .chip:active{transform:scale(.97)}
+  .chip[aria-pressed="true"]{
+    background:var(--tint);border-color:var(--c);color:var(--deep);
+    box-shadow:0 5px 14px -9px var(--c);
+  }
+  .ex-form{
+    background:#F8FAFD;border:1px solid #EDF2F9;border-radius:18px;
+    padding:13px;margin-bottom:19px;
+  }
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .fields.one{grid-template-columns:1fr}
+  .field{display:block;min-width:0}
+  .field-label{
+    display:block;margin:0 0 6px 2px;font-size:10.5px;font-weight:650;color:#7C8FA7;
+  }
+  .input-wrap{position:relative;display:block}
+  .input-wrap input{
+    width:100%;height:46px;border:1px solid #E2EBF6;border-radius:13px;
+    background:#fff;color:#173153;
+    padding:0 46px 0 13px;
+    font-family:var(--font-num);font-size:16px;font-weight:650;
+    font-variant-numeric:tabular-nums;
+    transition:border-color .16s,box-shadow .16s;
+    -moz-appearance:textfield;appearance:textfield;
+  }
+  .input-wrap input::-webkit-outer-spin-button,
+  .input-wrap input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .input-wrap input::placeholder{color:#B6C4D5;font-weight:500}
+  .input-wrap input:focus{outline:none;border-color:#8FC7FF;box-shadow:0 0 0 3px rgba(10,132,255,.12)}
+  .input-wrap input.invalid{border-color:#F2A7A0;box-shadow:0 0 0 3px rgba(228,82,66,.1)}
+  .unit{
+    position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    font-size:10.5px;color:#93A6BE;pointer-events:none;
+  }
+  .form-error{
+    margin:9px 2px 0;font-size:11px;line-height:1.45;color:#D14B3C;
+  }
+  .submit-btn{
+    width:100%;height:48px;margin-top:11px;cursor:pointer;
+    border:1.5px solid #E4EBF5;border-color:color-mix(in srgb, var(--c,#FF6B4A) 52%, #fff);
+    border-radius:13px;
+    display:flex;align-items:center;justify-content:center;gap:7px;
+    background:var(--tint,#FFF0EB);color:var(--deep,#C93A20);
+    font-size:13.5px;font-weight:750;letter-spacing:.3px;
+    box-shadow:0 10px 20px -17px var(--c,#FF6B4A);
+    transition:transform .16s,filter .16s,box-shadow .18s;
+  }
+  .submit-btn:hover{filter:brightness(.985);box-shadow:0 12px 22px -16px var(--c,#FF6B4A)}
+  .submit-btn:active{transform:scale(.985)}
+  .submit-plus{
+    width:20px;height:20px;border-radius:50%;flex:none;
+    display:grid;place-items:center;
+    background:var(--deep,#C93A20);color:#fff;
+    font-size:14px;font-weight:500;line-height:1;
+  }
+  .ex-totals{display:flex;flex-direction:column;gap:12px}
+  .ex-group{
+    border:1px solid #EDF2FA;border-radius:17px;padding:13px 14px 6px;
+    background:linear-gradient(180deg,var(--tint) 0%,rgba(255,255,255,.4) 72%);
+    overflow:hidden;
+  }
+  .ex-group-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .ex-name{display:flex;align-items:center;gap:8px;font-size:14.5px;font-weight:800;color:#1B304B}
+  .ex-dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none;box-shadow:0 0 0 3px var(--tint)}
+  .ex-sum{font-size:11.5px;color:#50657F;font-variant-numeric:tabular-nums;text-align:right;line-height:1.4}
+  .ex-sum b{font-family:var(--font-num);font-size:14px;font-weight:800;color:var(--deep)}
+  .ex-pace{
+    display:inline-flex;align-items:baseline;gap:4px;flex-wrap:wrap;
+    margin:8px 0 3px;padding:5px 9px;border-radius:9px;
+    background:rgba(255,255,255,.72);border:1px dashed #E1EBF7;
+    font-size:10.5px;color:#7A8DA4;font-variant-numeric:tabular-nums;
+  }
+  .ex-pace b{font-family:var(--font-num);font-size:12.5px;font-weight:800;color:var(--deep)}
+  .rec-list{list-style:none;margin:7px 0 0;padding:0;border-top:1px solid rgba(211,226,244,.6)}
+  .rec-row{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px dashed #EDF2F9}
+  .rec-row:last-child{border-bottom:0;padding-bottom:6px}
+  .rec-time{
+    flex:none;min-width:38px;font-family:var(--font-num);font-size:11px;color:#92A5BC;
+    font-variant-numeric:tabular-nums;letter-spacing:.2px;
+  }
+  .rec-detail{flex:1;min-width:0;font-size:12px;line-height:1.5;color:#425872;font-variant-numeric:tabular-nums}
+  .rec-detail em{display:block;font-style:normal;font-size:10.5px;color:#8C9EB4;margin-top:1px}
+  .undo{
+    flex:none;width:30px;height:30px;border:0;border-radius:50%;cursor:pointer;
+    display:grid;place-items:center;
+    background:#F3F7FB;color:#9BACBF;font-size:15px;line-height:1;
+    transition:background .15s,color .15s,transform .15s;
+  }
+  .undo:hover{background:#FFEDEA;color:#DB4E3C}
+  .undo:active{transform:scale(.92)}
+  .ex-empty{
+    border:1.5px dashed #DCE7F4;border-radius:17px;
+    padding:22px 14px 20px;text-align:center;background:#FAFCFF;
+  }
+  .ex-empty .empty-icon{font-size:21px;line-height:1;display:block;filter:grayscale(.1);opacity:.85}
+  .ex-empty p{margin:9px 0 0;font-size:13px;font-weight:700;color:#5B728E}
+  .ex-empty small{display:block;margin-top:5px;font-size:10.5px;color:#9BACBF}
+
+  /* ---------- 记录卡入口 ---------- */
+  .card-cta{
+    width:100%;display:flex;align-items:center;gap:13px;text-align:left;cursor:pointer;
+    padding:15px 16px;border-radius:22px;
+    border:1px solid rgba(10,132,255,.15);
+    background:
+      radial-gradient(120% 140% at 100% 0%, rgba(10,132,255,.16), transparent 55%),
+      linear-gradient(135deg,#F4FAFF,#E9F4FF);
+    box-shadow:0 16px 34px -24px rgba(10,110,220,.55);
+    transition:transform .18s,box-shadow .22s;
+    margin-top:2px;
+  }
+  .card-cta:hover{transform:translateY(-1px);box-shadow:0 20px 38px -24px rgba(10,110,220,.6)}
+  .card-cta:active{transform:scale(.988)}
+  .cta-spark{
+    width:44px;height:44px;flex:none;border-radius:15px;
+    display:grid;place-items:center;font-size:20px;color:#0A84FF;
+    background:#fff;box-shadow:0 8px 18px -12px rgba(10,110,220,.5), inset 0 0 0 1px rgba(214,234,255,.8);
+  }
+  .cta-text{min-width:0;flex:1}
+  .cta-text b{display:block;font-size:14.5px;font-weight:800;color:#0C3F73;letter-spacing:.2px}
+  .cta-text small{display:block;margin-top:3px;font-size:10.5px;color:#6C89A9}
+  .cta-arrow{flex:none;font-size:17px;color:#0A84FF;transition:transform .18s}
+  .card-cta:hover .cta-arrow{transform:translateX(3px)}
+  .local-note{
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    padding:16px 0 0;font-size:10px;color:#9CAEC2;line-height:1.5;text-align:center;
+  }
+  .local-note svg{width:11px;height:11px;flex:none;opacity:.8}
+
+  /* ---------- 预览/无法存储提示 ---------- */
+  .storage-warning{
+    display:flex;align-items:flex-start;gap:9px;
+    padding:11px 12px;margin:0 0 14px;
+    border-radius:16px;
+    background:linear-gradient(135deg,#FFF9EC,#FFF3DC);
+    border:1px solid #F2DDAE;
+    color:#7D5917;
+    font-size:10.5px;line-height:1.55;
+    box-shadow:0 10px 22px -18px rgba(150,100,20,.45);
+  }
+  .storage-warning-icon{
+    width:26px;height:26px;flex:none;border-radius:9px;
+    display:grid;place-items:center;
+    background:#fff;color:#C58A16;
+    box-shadow:inset 0 0 0 1px #F5E5C1;
+  }
+  .storage-warning-icon svg{width:14px;height:14px;display:block}
+  .storage-warning-text{min-width:0}
+  .storage-warning-text b{
+    display:block;margin-bottom:2px;
+    font-size:11.5px;font-weight:800;letter-spacing:.1px;color:#6B4A0E;
+  }
+  .storage-warning-text span{display:block}
+
+  /* ---------- 通用弹层 ---------- */
+  .modal{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center}
+  .modal-backdrop{
+    position:absolute;inset:0;background:rgba(13,32,56,.46);
+    backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+    animation:fadeIn .22s ease;
+  }
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .sheet{
+    position:relative;width:min(100%,520px);
+    background:#fff;border-radius:28px 28px 0 0;
+    padding:9px 20px calc(22px + env(safe-area-inset-bottom));
+    max-height:92vh;overflow:auto;overscroll-behavior:contain;
+    animation:sheetUp .34s cubic-bezier(.2,.9,.25,1);
+    box-shadow:0 -24px 60px -30px rgba(9,30,60,.5);
+  }
+  @keyframes sheetUp{from{transform:translateY(26px);opacity:.5}to{transform:translateY(0);opacity:1}}
+  .sheet-grabber{width:38px;height:4px;border-radius:2px;background:#E3EBF5;margin:0 auto 14px}
+  .sheet h2{margin:0;font-size:18px;font-weight:800;letter-spacing:.2px;color:#152B47}
+  .sheet-sub{margin:6px 0 0;font-size:11px;color:#8C9FB6;line-height:1.5}
+  .sheet-close{
+    position:absolute;top:15px;right:16px;width:32px;height:32px;border:0;border-radius:50%;
+    background:#F3F7FB;color:#7F92AA;font-size:18px;line-height:1;cursor:pointer;
+    display:grid;place-items:center;transition:background .15s,color .15s;
+  }
+  .sheet-close:hover{background:#EAF2FA;color:#405E83}
+  .nick-field{margin:17px 0 0}
+  .nick-input{
+    width:100%;height:50px;border:1px solid #E0EAF6;border-radius:14px;
+    background:#F9FBFE;padding:0 14px;font-size:16px;font-weight:650;color:#163153;
+    transition:border-color .16s,box-shadow .16s,background .16s;
+  }
+  .nick-input:focus{outline:none;border-color:#8FC7FF;background:#fff;box-shadow:0 0 0 3px rgba(10,132,255,.12)}
+  .field-foot{display:flex;align-items:center;justify-content:space-between;margin:7px 2px 0;gap:10px}
+  .nick-error{margin:0;font-size:11px;color:#D14B3C}
+  .char-count{font-size:10px;color:#A0B1C5;font-variant-numeric:tabular-nums;margin-left:auto}
+  .sheet-actions{display:grid;grid-template-columns:1fr 1.35fr;gap:10px;margin-top:18px}
+  .btn{
+    height:48px;border-radius:14px;border:1px solid transparent;cursor:pointer;
+    font-size:13.5px;font-weight:750;transition:transform .16s,filter .16s,background .16s;
+  }
+  .btn:active{transform:scale(.985)}
+  .btn-ghost{background:#F4F8FC;border-color:#E8EFF8;color:#617791}
+  .btn-ghost:hover{background:#EDF4FB}
+  .btn-primary{
+    color:#fff;background:linear-gradient(135deg,#35A8FF,#0A7CF7 60%,#0668E8);
+    box-shadow:0 12px 22px -14px rgba(10,124,255,.7);
+  }
+  .btn-primary:hover{filter:brightness(1.04)}
+
+  /* 记录卡弹层 */
+  .sheet-card{padding-bottom:calc(20px + env(safe-area-inset-bottom))}
+  .card-modal-head{padding-right:34px}
+  .card-preview{
+    margin:16px 0 0;padding:10px;border-radius:20px;
+    background:
+      radial-gradient(100% 100% at 50% 0%, rgba(10,132,255,.1), transparent 60%),
+      #F0F5FB;
+    border:1px solid #E5EDF7;
+    display:flex;justify-content:center;
+  }
+  .card-preview img{
+    display:block;width:auto;max-width:100%;max-height:min(58vh,560px);
+    border-radius:12px;
+    box-shadow:0 22px 46px -26px rgba(15,55,110,.55);
+    -webkit-touch-callout:default;
+    user-select:auto;
+  }
+  .save-hint{
+    display:flex;align-items:center;justify-content:center;gap:5px;
+    margin:11px 0 0;font-size:10.5px;color:#8FA2B8;text-align:center;
+  }
+  .save-btn{
+    width:100%;height:51px;margin-top:13px;border:0;border-radius:15px;cursor:pointer;
+    color:#fff;font-size:14px;font-weight:750;letter-spacing:.2px;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    background:linear-gradient(135deg,#35A8FF,#0A7CF7 60%,#0668E8);
+    box-shadow:0 14px 26px -14px rgba(10,124,255,.72), inset 0 1px 0 rgba(255,255,255,.3);
+    transition:transform .16s,filter .16s;
+  }
+  .save-btn:hover{filter:brightness(1.04)}
+  .save-btn:active{transform:scale(.986)}
+  .save-btn svg{width:16px;height:16px}
+
+  /* 提示 */
+  .toast{
+    position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));
+    transform:translate(-50%,10px);opacity:0;pointer-events:none;
+    max-width:calc(100vw - 40px);
+    padding:10px 16px;border-radius:999px;
+    background:rgba(16,34,56,.92);color:#fff;
+    font-size:11.5px;font-weight:550;line-height:1.45;text-align:center;
+    box-shadow:0 18px 36px -18px rgba(8,28,55,.7);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    transition:opacity .22s ease,transform .26s cubic-bezier(.2,.9,.25,1);
+    z-index:90;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  body.modal-open .toast{top:calc(18px + env(safe-area-inset-top));bottom:auto;transform:translate(-50%,-12px)}
+  body.modal-open .toast.show{transform:translate(-50%,0)}
+
+  @media (min-width:560px){
+    .modal{align-items:center}
+    .sheet{border-radius:28px;margin:20px}
+    .sheet-grabber{display:none}
+    .card-preview img{max-height:min(54vh,520px)}
+  }
+  @media (max-width:360px){
+    .water-total{font-size:38px}
+    .ring-wrap{width:124px;height:124px}
+    .water-body{gap:4px}
+    .chip{font-size:11px;gap:4px}
+    .card{padding:16px}
+    .brand-name{font-size:13.5px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{
+      animation-duration:.001ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:.001ms !important;
+      scroll-behavior:auto !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="storage-warning" id="storageWarning" role="alert" hidden>
+    <span class="storage-warning-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.3 4.2 2.7 17.3A1.9 1.9 0 0 0 4.4 20h15.2a1.9 1.9 0 0 0 1.7-2.7L13.7 4.2a2 2 0 0 0-3.4 0Z"/>
+        <path d="M12 9v4.4"/>
+        <path d="M12 16.8v.1"/>
+      </svg>
+    </span>
+    <span class="storage-warning-text">
+      <b>现在是无存储的预览模式</b>
+      <span>浏览器沙盒禁止本地存储，刷新后昵称和记录会丢失，保存图片也可能被拦截。请用 Chrome / Edge 直接打开 index.html 使用。</span>
+    </span>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 2.6c3.7 4.4 6.2 7.5 6.2 10.6a6.2 6.2 0 1 1-12.4 0c0-3.1 2.5-6.2 6.2-10.6Z" fill="#fff"/>
+          <path d="M9.4 12.4c.2 2.1 1.4 3.6 3.3 4.1" stroke="#2E9BFF" stroke-width="1.25" stroke-linecap="round" opacity=".75"/>
+        </svg>
+      </span>
+      <div class="brand-text">
+        <p class="brand-name">DSH-昊哥健康管理</p>
+        <p class="brand-sub">Water &amp; Move</p>
+      </div>
+    </div>
+    <div class="date-chip" aria-label="今天的日期">
+      <b id="topDate">—</b>
+      <span id="topWeek">—</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- 个人信息 -->
+    <section class="card profile" aria-label="个人信息">
+      <div class="avatar" aria-hidden="true">🌱</div>
+      <div class="profile-info">
+        <div class="name-line">
+          <h1 id="nickname">健康记录员</h1>
+          <button type="button" class="edit-btn" id="editNickname" aria-label="修改昵称">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 20h4L18.5 9.5a2.12 2.12 0 0 0-3-3L5 17v3Z"/>
+              <path d="M13.5 6.5l3 3"/>
+            </svg>
+            编辑
+          </button>
+        </div>
+        <p class="greeting" id="greeting">今天也要好好喝水、动一动</p>
+      </div>
+    </section>
+
+    <!-- 今日饮水 -->
+    <section class="card water-card" aria-labelledby="waterTitle">
+      <div class="card-head">
+        <div>
+          <p class="eyebrow">Water · 饮水</p>
+          <h2 id="waterTitle">今日饮水</h2>
+        </div>
+        <span class="goal-tag">目标 2,000 ml</span>
+      </div>
+
+      <div class="water-body">
+        <div class="ring-wrap" id="ringWrap" role="img" aria-label="今日饮水进度 0%">
+          <svg class="ring" viewBox="0 0 140 140" aria-hidden="true">
+            <defs>
+              <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#5CC6FF"/>
+                <stop offset=".55" stop-color="#1E94FF"/>
+                <stop offset="1" stop-color="#0A6DFF"/>
+              </linearGradient>
+              <clipPath id="ringInner"><circle cx="70" cy="70" r="54"/></clipPath>
+            </defs>
+            <circle class="ring-track" cx="70" cy="70" r="60"/>
+            <g clip-path="url(#ringInner)">
+              <g class="water-level" id="waterLevel" transform="translate(0 132)">
+                <path class="wave" d="M -280 4 Q -245 -8 -210 4 T -140 4 T -70 4 T 0 4 T 70 4 T 140 4 T 210 4 T 280 4 T 350 4 T 420 4 V 150 H -280 Z"/>
+              </g>
+            </g>
+            <circle class="ring-fill" id="ringFill" cx="70" cy="70" r="60" transform="rotate(-90 70 70)"/>
+          </svg>
+          <div class="ring-label">
+            <strong id="waterPct">0%</strong>
+            <span id="waterPctLabel">完成度</span>
+          </div>
+        </div>
+
+        <div class="water-stats">
+          <p class="water-total"><span id="waterTotal">0</span><em>ml</em></p>
+          <p class="water-remain" id="waterRemain">还差 2,000 ml</p>
+          <p class="water-note" id="waterNote">已喝 0 杯 · 目标 8 杯</p>
+        </div>
+      </div>
+
+      <button type="button" class="drink-btn" id="drinkBtn" aria-label="记录一次饮水，250 毫升">
+        <span class="plus" aria-hidden="true">+</span>
+        喝一杯
+        <b>250 ml</b>
+      </button>
+      <div class="water-log" id="waterLog" aria-label="今日饮水记录"></div>
+    </section>
+
+    <!-- 今日运动 -->
+    <section class="card exercise-card" aria-labelledby="exTitle">
+      <div class="card-head">
+        <div>
+          <p class="eyebrow">Move · 运动</p>
+          <h2 id="exTitle">今日运动</h2>
+        </div>
+        <span class="ex-count" id="exCount">今日 0 项</span>
+      </div>
+
+      <div class="chips" id="typeChips" role="group" aria-label="选择运动项目"></div>
+
+      <form class="ex-form" id="exForm" novalidate>
+        <div class="fields" id="exFields"></div>
+        <p class="form-error" id="formError" role="alert" hidden></p>
+        <button type="button" class="submit-btn" id="exSubmit">记录 · 跑步</button>
+      </form>
+
+      <div class="ex-totals" id="exTotals" aria-live="polite"></div>
+    </section>
+
+    <!-- 记录卡 -->
+    <button type="button" class="card-cta" id="openCard">
+      <span class="cta-spark" aria-hidden="true">✦</span>
+      <span class="cta-text">
+        <b>生成今日记录卡</b>
+        <small>头像 · 饮水 · 运动，一张图存下来</small>
+      </span>
+      <span class="cta-arrow" aria-hidden="true">→</span>
+    </button>
+
+    <p class="local-note">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="4.5" y="10" width="15" height="10" rx="2.5"/>
+        <path d="M8 10V7.5a4 4 0 1 1 8 0V10"/>
+      </svg>
+      <span id="localNoteText">无需登录，昵称与记录只保存在当前浏览器</span>
+    </p>
+  </main>
+</div>
+
+<!-- 修改昵称 -->
+<div class="modal" id="nickModal" role="dialog" aria-modal="true" aria-labelledby="nickTitle" hidden>
+  <div class="modal-backdrop" data-close="nickModal"></div>
+  <div class="sheet">
+    <div class="sheet-grabber" aria-hidden="true"></div>
+    <button type="button" class="sheet-close" data-close="nickModal" aria-label="关闭">×</button>
+    <h2 id="nickTitle">修改昵称</h2>
+    <p class="sheet-sub">昵称会显示在首页和今日记录卡上。</p>
+    <label class="nick-field">
+      <span class="field-label" style="margin:0 0 7px 2px;display:block;font-size:10.5px;font-weight:650;color:#7C8FA7;">今天的称呼</span>
+      <input class="nick-input" id="nickInput" type="text" maxlength="12" autocomplete="off" placeholder="健康记录员" aria-describedby="nickError">
+    </label>
+    <div class="field-foot">
+      <p class="nick-error" id="nickError" aria-live="polite"></p>
+      <span class="char-count"><span id="nickCount">5</span>/12</span>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost" data-close="nickModal">取消</button>
+      <button type="button" class="btn btn-primary" id="nickSave">保存昵称</button>
+    </div>
+  </div>
+</div>
+
+<!-- 今日记录卡 -->
+<div class="modal" id="cardModal" role="dialog" aria-modal="true" aria-labelledby="cardTitle" hidden>
+  <div class="modal-backdrop" data-close="cardModal"></div>
+  <div class="sheet sheet-card">
+    <div class="sheet-grabber" aria-hidden="true"></div>
+    <div class="card-modal-head">
+      <h2 id="cardTitle">今日记录卡</h2>
+      <p class="sheet-sub">预览就是保存后的效果，一点不差。</p>
+    </div>
+    <button type="button" class="sheet-close" data-close="cardModal" aria-label="关闭">×</button>
+    <div class="card-preview">
+      <img id="cardImg" alt="今日记录卡预览">
+    </div>
+    <p class="save-hint">手机可长按上方图片保存到相册</p>
+    <button type="button" class="save-btn" id="saveCard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3v12"/>
+        <path d="m7.5 10.5 4.5 4.5 4.5-4.5"/>
+        <path d="M4.5 17.5v1A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.5-2.5v-1"/>
+      </svg>
+      保存图片（PNG）
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ============ 基础配置 ============ */
+  var STORAGE_KEY = 'dsh-health-v1';
+  var DEFAULT_NICKNAME = '健康记录员';
+  var MAX_NICKNAME = 12;
+  var WATER_GOAL = 2000;
+  var WATER_PER_CUP = 250;
+
+  var TYPES = [
+    { id: 'run',     name: '跑步', mode: 'distance', color: '#FF6B4A', deep: '#C93A20', tint: '#FFF0EB' },
+    { id: 'walk',    name: '散步', mode: 'distance', color: '#1FB98A', deep: '#067A5B', tint: '#E8FAF4' },
+    { id: 'cycle',   name: '骑行', mode: 'distance', color: '#5B6CF5', deep: '#3B49D6', tint: '#EEF0FE' },
+    { id: 'stretch', name: '拉伸', mode: 'time',     color: '#F2A02D', deep: '#9A5A00', tint: '#FFF4E2' },
+    { id: 'yoga',    name: '瑜伽', mode: 'time',     color: '#B269E3', deep: '#7E33B5', tint: '#F7EDFD' }
+  ];
+
+  var $ = function (sel, root) { return (root || document).querySelector(sel); };
+  var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+  function dateKey(d) {
+    d = d || new Date();
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+  function todayEntries() {
+    var key = dateKey();
+    return state.entries.filter(function (e) { return e.date === key; });
+  }
+  function typeById(id) {
+    for (var i = 0; i < TYPES.length; i++) if (TYPES[i].id === id) return TYPES[i];
+    return null;
+  }
+  function fmtTime(ts) {
+    var d = new Date(ts);
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  function fmtKm(n) {
+    var v = Number(n) || 0;
+    return v.toFixed(2);
+  }
+  function fmtMin(n) {
+    var v = Number(n) || 0;
+    return Number.isInteger(v) ? String(v) : v.toFixed(1);
+  }
+  function fmtPace(km, min) {
+    if (!km || !min || km <= 0 || min <= 0) return '—';
+    var sec = (min * 60) / km;
+    var m = Math.floor(sec / 60);
+    var s = Math.round(sec % 60);
+    if (s === 60) { m += 1; s = 0; }
+    return m + '\u2032' + pad2(s) + '\u2033';
+  }
+  function fmtNum(n) {
+    return Number(n).toLocaleString('zh-CN');
+  }
+
+  /* ============ 存储 ============ */
+  function loadState() {
+    var fallback = { nickname: DEFAULT_NICKNAME, entries: [] };
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return fallback;
+      var data = JSON.parse(raw);
+      if (!data || typeof data !== 'object') return fallback;
+      var nick = typeof data.nickname === 'string' ? data.nickname.trim().slice(0, MAX_NICKNAME) : '';
+      var entries = Array.isArray(data.entries) ? data.entries.filter(isValidEntry).map(function (e) {
+        var out = {
+          id: String(e.id), kind: e.kind, date: e.date, ts: Number(e.ts)
+        };
+        if (e.kind === 'water') out.ml = Number(e.ml) || WATER_PER_CUP;
+        if (e.kind === 'exercise') {
+          out.type = e.type;
+          out.min = Number(e.min) || 0;
+          if (typeof e.km !== 'undefined') out.km = Number(e.km) || 0;
+        }
+        return out;
+      }) : [];
+      return { nickname: nick || DEFAULT_NICKNAME, entries: entries };
+    } catch (err) {
+      return fallback;
+    }
+  }
+  function isValidEntry(e) {
+    return !!e && typeof e === 'object' &&
+      typeof e.id === 'string' &&
+      (e.kind === 'water' || e.kind === 'exercise') &&
+      typeof e.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(e.date) &&
+      Number.isFinite(Number(e.ts));
+  }
+  function canUseStorage() {
+    try {
+      var probe = '__dsh_health_probe__';
+      localStorage.setItem(probe, '1');
+      localStorage.removeItem(probe);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+  var storageWarned = false;
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (err) {
+      if (!storageWarned) {
+        storageWarned = true;
+        showToast('当前环境无法保存，刷新后会丢失');
+      }
+    }
+  }
+
+  /* ============ 状态 ============ */
+  var state = loadState();
+  var STORAGE_OK = canUseStorage();
+  var selectedType = TYPES[0].id;
+  var currentDay = dateKey();
+  var lastFocus = null;
+  var cardDataUrl = '';
+
+  function persistHint() {
+    return STORAGE_OK ? '' : '（预览模式：刷新后会丢失）';
+  }
+
+  function applyStorageMode() {
+    if (STORAGE_OK) return;
+    var warning = $('#storageWarning');
+    if (warning) warning.hidden = false;
+    var note = $('#localNoteText');
+    if (note) note.textContent = '预览模式：数据无法保存，请用浏览器直接打开';
+  }
+
+  /* ============ 提示 ============ */
+  var toastTimer = null;
+  function showToast(msg) {
+    var t = $('#toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2300);
+  }
+
+  /* ============ 日期 & 个人信息 ============ */
+  function renderDate() {
+    var d = new Date();
+    $('#topDate').textContent = (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    var week = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()];
+    $('#topWeek').textContent = week;
+  }
+
+  function renderProfile() {
+    $('#nickname').textContent = state.nickname;
+    var entries = todayEntries();
+    var water = entries.filter(function (e) { return e.kind === 'water'; });
+    var ex = entries.filter(function (e) { return e.kind === 'exercise'; });
+    var cups = Math.round(water.reduce(function (s, e) { return s + (e.ml || 0); }, 0) / WATER_PER_CUP);
+    var exTypes = {};
+    ex.forEach(function (e) { exTypes[e.type] = 1; });
+    var exTypeCount = Object.keys(exTypes).length;
+    var parts = [];
+    if (cups > 0) parts.push('喝了 ' + cups + ' 杯水');
+    if (exTypeCount > 0) parts.push('运动 ' + exTypeCount + ' 项');
+    $('#greeting').textContent = parts.length
+      ? '今天已' + parts.join(' · ') + '，继续保持'
+      : '今天也要好好喝水、动一动';
+  }
+
+  /* ============ 饮水 ============ */
+  function renderWater() {
+    var entries = todayEntries()
+      .filter(function (e) { return e.kind === 'water'; })
+      .sort(function (a, b) { return b.ts - a.ts; });
+    var total = entries.reduce(function (s, e) { return s + (e.ml || 0); }, 0);
+    var ratio = total / WATER_GOAL;
+    var capped = Math.min(ratio, 1);
+    var pct = Math.round(ratio * 100);
+    var remain = Math.max(0, WATER_GOAL - total);
+    var extra = Math.max(0, total - WATER_GOAL);
+
+    $('#waterTotal').textContent = fmtNum(total);
+    $('#waterPct').textContent = pct + '%';
+
+    var remainEl = $('#waterRemain');
+    if (total >= WATER_GOAL) {
+      remainEl.textContent = extra > 0
+        ? '目标已完成 · 超出 ' + fmtNum(extra) + ' ml'
+        : '今日目标已完成 🎉';
+    } else {
+      remainEl.textContent = '还差 ' + fmtNum(remain) + ' ml';
+    }
+    var cups = Math.round(total / WATER_PER_CUP);
+    $('#waterNote').textContent = '已喝 ' + cups + ' 杯 · 目标 ' + (WATER_GOAL / WATER_PER_CUP) + ' 杯';
+    $('#ringWrap').setAttribute('aria-label', '今日饮水完成 ' + pct + '%');
+
+    var C = 2 * Math.PI * 60;
+    var ring = $('#ringFill');
+    ring.style.strokeDasharray = C.toFixed(2);
+    ring.style.strokeDashoffset = (C * (1 - capped)).toFixed(2);
+
+    var level = $('#waterLevel');
+    var y = total <= 0 ? 132 : (124 - 108 * capped);
+    level.setAttribute('transform', 'translate(0 ' + y.toFixed(2) + ')');
+
+    var log = $('#waterLog');
+    log.innerHTML = '';
+    if (!entries.length) {
+      log.hidden = true;
+      return;
+    }
+    log.hidden = false;
+    entries.forEach(function (entry) {
+      var chip = el('span', 'water-chip');
+      var time = el('time', null, fmtTime(entry.ts));
+      time.setAttribute('datetime', new Date(entry.ts).toISOString());
+      var btn = el('button', 'x', '×');
+      btn.type = 'button';
+      btn.setAttribute('aria-label', '撤销 ' + fmtTime(entry.ts) + ' 的 250 毫升饮水记录');
+      btn.addEventListener('click', function () { undoEntry(entry.id); });
+      chip.appendChild(time);
+      chip.appendChild(btn);
+      log.appendChild(chip);
+    });
+  }
+
+  function addWater() {
+    state.entries.push({
+      id: uid(),
+      kind: 'water',
+      date: dateKey(),
+      ts: Date.now(),
+      ml: WATER_PER_CUP
+    });
+    saveState();
+    renderWater();
+    renderProfile();
+    floatPlus();
+    var totalEl = $('#waterTotal');
+    totalEl.classList.remove('pop');
+    void totalEl.offsetWidth;
+    totalEl.classList.add('pop');
+    showToast('已记录 +250 ml 饮水' + persistHint());
+  }
+
+  function floatPlus() {
+    var card = $('.water-card');
+    var btn = $('#drinkBtn');
+    if (!card || !btn) return;
+    var cr = card.getBoundingClientRect();
+    var br = btn.getBoundingClientRect();
+    var span = el('span', 'float-plus', '+250 ml');
+    span.style.left = (br.left - cr.left + br.width / 2 - 22) + 'px';
+    span.style.top = (br.top - cr.top - 2) + 'px';
+    card.appendChild(span);
+    setTimeout(function () { span.remove(); }, 1000);
+  }
+
+  /* ============ 运动：类型切换 & 表单 ============ */
+  function renderChips() {
+    var wrap = $('#typeChips');
+    wrap.innerHTML = '';
+    TYPES.forEach(function (t) {
+      var btn = el('button', 'chip');
+      btn.type = 'button';
+      btn.setAttribute('aria-pressed', String(t.id === selectedType));
+      btn.style.setProperty('--c', t.color);
+      btn.style.setProperty('--deep', t.deep);
+      btn.style.setProperty('--tint', t.tint);
+      btn.appendChild(el('span', 'dot'));
+      btn.appendChild(document.createTextNode(t.name));
+      btn.addEventListener('click', function () {
+        if (selectedType === t.id) return;
+        selectedType = t.id;
+        renderChips();
+        renderForm();
+      });
+      wrap.appendChild(btn);
+    });
+  }
+
+  function fieldMarkup(id, label, unit, placeholder, inputmode, step) {
+    return '<label class="field" for="' + id + '">' +
+      '<span class="field-label">' + label + '</span>' +
+      '<span class="input-wrap">' +
+        '<input id="' + id + '" name="' + id + '" type="number" inputmode="' + inputmode + '" step="' + step + '" min="0" placeholder="' + placeholder + '" autocomplete="off" enterkeyhint="done">' +
+        '<span class="unit">' + unit + '</span>' +
+      '</span>' +
+    '</label>';
+  }
+
+  function currentType() { return typeById(selectedType) || TYPES[0]; }
+
+  function renderForm() {
+    var t = currentType();
+    var fields = $('#exFields');
+    fields.className = 'fields' + (t.mode === 'time' ? ' one' : '');
+    fields.innerHTML = t.mode === 'distance'
+      ? fieldMarkup('kmInput', '距离', '公里', '0.00', 'decimal', '0.01') +
+        fieldMarkup('minInput', '时长', '分钟', '0', 'numeric', '1')
+      : fieldMarkup('minInput', '时长', '分钟', '0', 'numeric', '1');
+    var submit = $('#exSubmit');
+    submit.innerHTML = '<span class="submit-plus" aria-hidden="true">+</span>记录 · ' + t.name;
+    submit.style.setProperty('--c', t.color);
+    submit.style.setProperty('--deep', t.deep);
+    submit.style.setProperty('--tint', t.tint);
+    hideFormError();
+  }
+
+  function showFormError(msg, inputId) {
+    var err = $('#formError');
+    err.textContent = msg;
+    err.hidden = false;
+    $$('#exFields input').forEach(function (i) { i.classList.remove('invalid'); });
+    if (inputId) {
+      var input = document.getElementById(inputId);
+      if (input) {
+        input.classList.add('invalid');
+        input.focus();
+      }
+    }
+  }
+  function hideFormError() {
+    var err = $('#formError');
+    err.hidden = true;
+    err.textContent = '';
+    $$('#exFields input').forEach(function (i) { i.classList.remove('invalid'); });
+  }
+
+  function submitExercise(ev) {
+    if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+    var t = currentType();
+    var kmInput = $('#kmInput');
+    var minInput = $('#minInput');
+    var minRaw = minInput ? parseFloat(minInput.value) : NaN;
+    var kmRaw = t.mode === 'distance' && kmInput ? parseFloat(kmInput.value) : null;
+
+    if (t.mode === 'distance') {
+      if (!Number.isFinite(kmRaw) || kmRaw <= 0) {
+        showFormError('请填写运动距离（公里）', 'kmInput');
+        return;
+      }
+      if (kmRaw > 500) {
+        showFormError('距离看起来太大了，请确认一下', 'kmInput');
+        return;
+      }
+    }
+    if (!Number.isFinite(minRaw) || minRaw <= 0) {
+      showFormError('请填写运动时长（分钟）', 'minInput');
+      return;
+    }
+    if (minRaw > 1440) {
+      showFormError('时长看起来太大了，请确认一下', 'minInput');
+      return;
+    }
+
+    var minutes = Math.round(minRaw * 10) / 10;
+    var entry = {
+      id: uid(),
+      kind: 'exercise',
+      type: t.id,
+      date: dateKey(),
+      ts: Date.now(),
+      min: minutes
+    };
+    var badge = fmtMin(minutes) + ' 分钟';
+    if (t.mode === 'distance') {
+      var km = Math.round(kmRaw * 100) / 100;
+      entry.km = km;
+      badge = fmtKm(km) + ' 公里 · ' + badge;
+    }
+    state.entries.push(entry);
+    saveState();
+    hideFormError();
+    if (kmInput) kmInput.value = '';
+    if (minInput) minInput.value = '';
+    renderExercise();
+    renderProfile();
+    showToast('已记录 · ' + t.name + ' ' + badge + persistHint());
+  }
+
+  /* ============ 运动：合计与记录 ============ */
+  function renderExercise() {
+    var entries = todayEntries().filter(function (e) { return e.kind === 'exercise'; });
+    var groups = [];
+    TYPES.forEach(function (t) {
+      var rows = entries.filter(function (e) { return e.type === t.id; })
+        .sort(function (a, b) { return b.ts - a.ts; });
+      if (rows.length) groups.push({ type: t, rows: rows });
+    });
+
+    $('#exCount').textContent = groups.length ? '今日 ' + groups.length + ' 项' : '今日 0 项';
+
+    var wrap = $('#exTotals');
+    wrap.innerHTML = '';
+
+    if (!groups.length) {
+      var empty = el('div', 'ex-empty');
+      var icon = el('span', 'empty-icon', '🌿');
+      empty.appendChild(icon);
+      var p = el('p', null, '今日暂无运动记录');
+      var small = el('small', null, '选一个项目，记录今天的第一次运动');
+      empty.appendChild(p);
+      empty.appendChild(small);
+      wrap.appendChild(empty);
+      return;
+    }
+
+    groups.forEach(function (group) {
+      var t = group.type;
+      var totalMin = group.rows.reduce(function (s, e) { return s + (Number(e.min) || 0); }, 0);
+      var totalKm = group.rows.reduce(function (s, e) { return s + (Number(e.km) || 0); }, 0);
+
+      var box = el('div', 'ex-group');
+      box.style.setProperty('--c', t.color);
+      box.style.setProperty('--deep', t.deep);
+      box.style.setProperty('--tint', t.tint);
+
+      var head = el('div', 'ex-group-head');
+      var name = el('div', 'ex-name');
+      name.appendChild(el('span', 'ex-dot'));
+      name.appendChild(document.createTextNode(t.name));
+      var sum = el('div', 'ex-sum');
+      if (t.mode === 'distance') {
+        sum.innerHTML = '今日 <b>' + fmtKm(totalKm) + '</b> 公里 · <b>' + fmtMin(totalMin) + '</b> 分钟';
+      } else {
+        sum.innerHTML = '今日 <b>' + fmtMin(totalMin) + '</b> 分钟';
+      }
+      head.appendChild(name);
+      head.appendChild(sum);
+      box.appendChild(head);
+
+      if (t.id === 'run' && totalKm > 0) {
+        var pace = el('div', 'ex-pace');
+        pace.innerHTML = '今日平均配速 <b>' + fmtPace(totalKm, totalMin) + '</b> / 公里';
+        box.appendChild(pace);
+      }
+
+      var list = el('ul', 'rec-list');
+      group.rows.forEach(function (entry) {
+        var li = el('li', 'rec-row');
+        var time = el('time', 'rec-time', fmtTime(entry.ts));
+        time.setAttribute('datetime', new Date(entry.ts).toISOString());
+        var detail = el('div', 'rec-detail');
+        if (t.mode === 'distance') {
+          detail.appendChild(document.createTextNode(fmtKm(entry.km) + ' 公里 · ' + fmtMin(entry.min) + ' 分钟'));
+          if (t.id === 'run') {
+            var em = el('em', null, '配速 ' + fmtPace(entry.km, entry.min) + ' / 公里');
+            detail.appendChild(em);
+          }
+        } else {
+          detail.appendChild(document.createTextNode(fmtMin(entry.min) + ' 分钟'));
+        }
+        var undo = el('button', 'undo', '×');
+        undo.type = 'button';
+        undo.setAttribute('aria-label', '撤销 ' + fmtTime(entry.ts) + ' 的' + t.name + '记录');
+        undo.addEventListener('click', function () { undoEntry(entry.id); });
+        li.appendChild(time);
+        li.appendChild(detail);
+        li.appendChild(undo);
+        list.appendChild(li);
+      });
+      box.appendChild(list);
+      wrap.appendChild(box);
+    });
+  }
+
+  /* ============ 撤销 ============ */
+  function undoEntry(id) {
+    var idx = -1;
+    for (var i = 0; i < state.entries.length; i++) {
+      if (state.entries[i].id === id) { idx = i; break; }
+    }
+    if (idx < 0) return;
+    var removed = state.entries.splice(idx, 1)[0];
+    saveState();
+    renderWater();
+    renderExercise();
+    renderProfile();
+    var label = '一条记录';
+    if (removed.kind === 'water') {
+      label = '250 ml 饮水';
+    } else {
+      var t = typeById(removed.type);
+      if (t) {
+        label = t.name + '记录';
+        if (typeof removed.km !== 'undefined') label += '（' + fmtKm(removed.km) + ' 公里）';
+      }
+    }
+    showToast('已撤销 · ' + label);
+  }
+
+  /* ============ 昵称弹层 ============ */
+  function getFocusable(root) {
+    return $$('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])', root)
+      .filter(function (n) { return !n.disabled && n.offsetParent !== null; });
+  }
+  function openModal(id) {
+    var modal = document.getElementById(id);
+    if (!modal) return;
+    lastFocus = document.activeElement;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    document.body.classList.add('modal-open');
+    var t = $('#toast');
+    if (t) t.classList.remove('show');
+  }
+  function closeModal(id) {
+    var modal = document.getElementById(id);
+    if (!modal || modal.hidden) return;
+    modal.hidden = true;
+    if (!$$('.modal:not([hidden])').length) {
+      document.body.style.overflow = '';
+      document.body.classList.remove('modal-open');
+    }
+    if (lastFocus && typeof lastFocus.focus === 'function') {
+      try { lastFocus.focus(); } catch (e) {}
+    }
+  }
+  function closeAllModals() {
+    $$('.modal:not([hidden])').forEach(function (m) {
+      if (m.id) closeModal(m.id);
+    });
+  }
+
+  function openNickname() {
+    var modal = $('#nickModal');
+    $('#nickInput').value = state.nickname;
+    $('#nickError').textContent = '';
+    updateNickCount();
+    openModal('nickModal');
+    setTimeout(function () {
+      var input = $('#nickInput');
+      input.focus();
+      input.select();
+    }, 90);
+  }
+  function updateNickCount() {
+    var v = $('#nickInput').value;
+    $('#nickCount').textContent = Array.from(v).length;
+  }
+  function saveNickname() {
+    var input = $('#nickInput');
+    var raw = input.value;
+    var v = raw.trim().replace(/\s+/g, ' ');
+    if (!v) {
+      $('#nickError').textContent = '昵称不能为空';
+      input.focus();
+      return;
+    }
+    if (Array.from(v).length > MAX_NICKNAME) {
+      $('#nickError').textContent = '昵称最多 ' + MAX_NICKNAME + ' 个字';
+      return;
+    }
+    state.nickname = v;
+    saveState();
+    renderProfile();
+    closeModal('nickModal');
+    showToast('昵称已保存' + persistHint());
+  }
+
+  /* ============ 今日记录卡（Canvas） ============ */
+  var CARD = {
+    W: 750,
+    OUTER: 28,
+    PAD: 52,
+    CX: 82,
+    CR: 668,
+    TOP: 80,
+    HEADER: 142,
+    DIV1: 278,
+    WLABEL: 310,
+    WATER: 352,
+    DIV2: 534,
+    EXLABEL: 566,
+    ROWS: 608,
+    ROW_H: 86,
+    EMPTY_H: 84,
+    TAG_GAP: 34,
+    TAG_H: 60,
+    FOOT_GAP: 30,
+    FOOT_H: 26,
+    BOTTOM_PAD: 52,
+    R: 44
+  };
+  var EMOJI_FONT = '"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif';
+  var UI_FONT = '"PingFang SC","Microsoft YaHei","Noto Sans SC","HarmonyOS Sans SC",sans-serif';
+  var NUM_FONT = '"SF Pro Display","DIN Alternate","Bahnschrift","Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+
+  function rr(ctx, x, y, w, h, r) {
+    var radius = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.arcTo(x + w, y, x + w, y + h, radius);
+    ctx.arcTo(x + w, y + h, x, y + h, radius);
+    ctx.arcTo(x, y + h, x, y, radius);
+    ctx.arcTo(x, y, x + w, y, radius);
+    ctx.closePath();
+  }
+
+  function setFont(ctx, weight, size, family) {
+    ctx.font = weight + ' ' + size + 'px ' + (family || UI_FONT);
+  }
+
+  function fitText(ctx, text, maxWidth, baseSize, weight) {
+    var size = baseSize;
+    setFont(ctx, weight, size, UI_FONT);
+    while (size > 20 && ctx.measureText(text).width > maxWidth) {
+      size -= 2;
+      setFont(ctx, weight, size, UI_FONT);
+    }
+    var out = text;
+    if (ctx.measureText(out).width > maxWidth) {
+      while (out.length > 1 && ctx.measureText(out + '…').width > maxWidth) {
+        out = out.slice(0, -1);
+      }
+      out += '…';
+    }
+    return { text: out, size: size };
+  }
+
+  function drawCard() {
+    var entries = todayEntries();
+    var waterEntries = entries.filter(function (e) { return e.kind === 'water'; });
+    var water = waterEntries.reduce(function (s, e) { return s + (e.ml || 0); }, 0);
+    var ratio = water / WATER_GOAL;
+    var capped = Math.min(ratio, 1);
+    var pct = Math.round(ratio * 100);
+    var remain = Math.max(0, WATER_GOAL - water);
+    var extra = Math.max(0, water - WATER_GOAL);
+    var cups = Math.round(water / WATER_PER_CUP);
+
+    var groups = [];
+    TYPES.forEach(function (t) {
+      var rows = entries.filter(function (e) { return e.kind === 'exercise' && e.type === t.id; });
+      if (rows.length) {
+        var totalMin = rows.reduce(function (s, e) { return s + (Number(e.min) || 0); }, 0);
+        var totalKm = rows.reduce(function (s, e) { return s + (Number(e.km) || 0); }, 0);
+        groups.push({ type: t, rows: rows, min: totalMin, km: totalKm });
+      }
+    });
+
+    var rowsArea = groups.length ? groups.length * CARD.ROW_H : CARD.EMPTY_H;
+    var H = CARD.ROWS + rowsArea + CARD.TAG_GAP + CARD.TAG_H + CARD.FOOT_GAP + CARD.FOOT_H + CARD.BOTTOM_PAD + CARD.OUTER;
+
+    var canvas = document.createElement('canvas');
+    canvas.width = CARD.W;
+    canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+
+    /* 背景 */
+    var bg = ctx.createLinearGradient(0, 0, CARD.W, H);
+    bg.addColorStop(0, '#E9F4FF');
+    bg.addColorStop(.48, '#F3F9FF');
+    bg.addColorStop(1, '#E7F1FF');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, CARD.W, H);
+
+    /* 纸外装饰 */
+    ctx.fillStyle = 'rgba(255,255,255,.55)';
+    ctx.beginPath(); ctx.arc(CARD.W - 36, 36, 64, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(30, H - 30, 52, 0, Math.PI * 2); ctx.fill();
+
+    /* 白卡 */
+    ctx.save();
+    ctx.shadowColor = 'rgba(21,70,134,.20)';
+    ctx.shadowBlur = 46;
+    ctx.shadowOffsetY = 18;
+    rr(ctx, CARD.OUTER, CARD.OUTER, CARD.W - CARD.OUTER * 2, H - CARD.OUTER * 2, CARD.R);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fill();
+    ctx.restore();
+
+    /* 卡内装饰（裁剪） */
+    ctx.save();
+    rr(ctx, CARD.OUTER, CARD.OUTER, CARD.W - CARD.OUTER * 2, H - CARD.OUTER * 2, CARD.R);
+    ctx.clip();
+    var glow = ctx.createRadialGradient(660, 80, 20, 660, 80, 430);
+    glow.addColorStop(0, 'rgba(64,171,255,.20)');
+    glow.addColorStop(.55, 'rgba(64,171,255,.06)');
+    glow.addColorStop(1, 'rgba(64,171,255,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(CARD.OUTER, CARD.OUTER, CARD.W - CARD.OUTER * 2, H - CARD.OUTER * 2);
+
+    ctx.strokeStyle = 'rgba(10,132,255,.07)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(20, H - 30, 150, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(10,132,255,.08)';
+    var dots = [[612, 150, 4], [642, 132, 2.6], [664, 162, 3.2], [604, 190, 2.2], [686, 108, 2.4]];
+    dots.forEach(function (d) {
+      ctx.beginPath(); ctx.arc(d[0], d[1], d[2], 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.restore();
+
+    /* 品牌行 */
+    var logoGrad = ctx.createLinearGradient(82, 80, 112, 112);
+    logoGrad.addColorStop(0, '#57BEFF');
+    logoGrad.addColorStop(1, '#0A6DFF');
+    ctx.save();
+    ctx.translate(97, 94);
+    ctx.fillStyle = logoGrad;
+    ctx.beginPath();
+    ctx.moveTo(0, -14);
+    ctx.bezierCurveTo(6, -6, 12, 0, 12, 6);
+    ctx.arc(0, 6, 12, 0, Math.PI, false);
+    ctx.bezierCurveTo(-12, 0, -6, -6, 0, -14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    setFont(ctx, 600, 21, UI_FONT);
+    ctx.fillStyle = '#33506F';
+    ctx.fillText('DSH-昊哥健康管理', 122, 101);
+
+    setFont(ctx, 600, 15, UI_FONT);
+    ctx.fillStyle = '#9DB2C9';
+    ctx.textAlign = 'right';
+    ctx.fillText('今日记录卡', CARD.CR, 101);
+    ctx.textAlign = 'left';
+
+    /* 头像 */
+    var ax = 132, ay = 192;
+    ctx.save();
+    ctx.shadowColor = 'rgba(10,132,255,.22)';
+    ctx.shadowBlur = 22;
+    ctx.shadowOffsetY = 10;
+    var avGrad = ctx.createRadialGradient(ax - 18, ay - 22, 8, ax, ay, 58);
+    avGrad.addColorStop(0, '#FFFFFF');
+    avGrad.addColorStop(.55, '#E9F5FF');
+    avGrad.addColorStop(1, '#D5EBFF');
+    ctx.fillStyle = avGrad;
+    ctx.beginPath();
+    ctx.arc(ax, ay, 50, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,.95)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(ax, ay, 48.5, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '56px ' + EMOJI_FONT;
+    ctx.fillText('🌱', ax, ay + 2);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+
+    /* 昵称与日期 */
+    var nick = state.nickname || DEFAULT_NICKNAME;
+    var fitted = fitText(ctx, nick, 430, 36, 700);
+    setFont(ctx, 700, fitted.size, UI_FONT);
+    ctx.fillStyle = '#14283F';
+    ctx.fillText(fitted.text, 212, 192);
+
+    var now = new Date();
+    var week = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][now.getDay()];
+    setFont(ctx, 400, 20, UI_FONT);
+    ctx.fillStyle = '#7E93AD';
+    ctx.fillText(now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日 · ' + week, 212, 228);
+
+    /* 分割线 1 */
+    ctx.strokeStyle = '#EAF1F9';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(CARD.CX, CARD.DIV1);
+    ctx.lineTo(CARD.CR, CARD.DIV1);
+    ctx.stroke();
+
+    /* 饮水标签行 */
+    setFont(ctx, 600, 18, UI_FONT);
+    ctx.fillStyle = '#7D95B3';
+    ctx.fillText('饮水 · WATER', CARD.CX, CARD.WLABEL + 16);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#8AA0BB';
+    ctx.fillText('目标 ' + fmtNum(WATER_GOAL) + ' ml', CARD.CR, CARD.WLABEL + 16);
+    ctx.textAlign = 'left';
+
+    /* 饮水数据 */
+    var totalText = fmtNum(water);
+    setFont(ctx, 700, 62, NUM_FONT);
+    ctx.fillStyle = '#0B2E5E';
+    ctx.fillText(totalText, CARD.CX, 424);
+    var totalW = ctx.measureText(totalText).width;
+    setFont(ctx, 500, 24, UI_FONT);
+    ctx.fillStyle = '#7D93AF';
+    ctx.fillText('ml', CARD.CX + totalW + 10, 424);
+
+    setFont(ctx, 600, 21, UI_FONT);
+    ctx.fillStyle = water >= WATER_GOAL ? '#0A84FF' : '#0A84FF';
+    var remainText = water >= WATER_GOAL
+      ? (extra > 0 ? '目标已完成 · 超出 ' + fmtNum(extra) + ' ml' : '今日目标已完成')
+      : '还差 ' + fmtNum(remain) + ' ml';
+    ctx.fillText(remainText, CARD.CX, 462);
+
+    setFont(ctx, 400, 18, UI_FONT);
+    ctx.fillStyle = '#93A6BE';
+    ctx.fillText('已喝 ' + cups + ' 杯 · 目标 ' + (WATER_GOAL / WATER_PER_CUP) + ' 杯', CARD.CX, 492);
+
+    /* 圆环 */
+    var rx = 595, ry = 427, rr0 = 68;
+    ctx.lineWidth = 9;
+    ctx.strokeStyle = '#EAF3FC';
+    ctx.beginPath();
+    ctx.arc(rx, ry, rr0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    /* 环内水位 */
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(rx, ry, 59, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.fillStyle = '#F4FAFF';
+    ctx.fillRect(rx - 60, ry - 60, 120, 120);
+    if (ratio > 0) {
+      var levelTop = ry + 59 - 118 * capped;
+      ctx.beginPath();
+      ctx.moveTo(rx - 60, levelTop);
+      var waves = 3;
+      var stepW = 120 / waves;
+      for (var wi = 0; wi < waves; wi++) {
+        var sx = rx - 60 + wi * stepW;
+        ctx.quadraticCurveTo(sx + stepW * .25, levelTop - 7, sx + stepW * .5, levelTop);
+        ctx.quadraticCurveTo(sx + stepW * .75, levelTop + 7, sx + stepW, levelTop);
+      }
+      ctx.lineTo(rx + 60, ry + 60);
+      ctx.lineTo(rx - 60, ry + 60);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(165,215,255,.82)';
+      ctx.fill();
+    }
+    ctx.restore();
+
+    /* 圆环进度 */
+    if (capped > 0) {
+      var ringGrad = ctx.createLinearGradient(rx - rr0, ry - rr0, rx + rr0, ry + rr0);
+      ringGrad.addColorStop(0, '#5CC6FF');
+      ringGrad.addColorStop(1, '#0A6DFF');
+      ctx.strokeStyle = ringGrad;
+      ctx.lineWidth = 9;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(rx, ry, rr0, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * capped);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
+
+    ctx.textAlign = 'center';
+    setFont(ctx, 700, 34, NUM_FONT);
+    ctx.fillStyle = '#0B5FCB';
+    ctx.fillText(pct + '%', rx, ry + 4);
+    setFont(ctx, 600, 15, UI_FONT);
+    ctx.fillStyle = '#7FA6CF';
+    ctx.fillText('完成度', rx, ry + 27);
+    ctx.textAlign = 'left';
+
+    /* 分割线 2 */
+    ctx.strokeStyle = '#EAF1F9';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(CARD.CX, CARD.DIV2);
+    ctx.lineTo(CARD.CR, CARD.DIV2);
+    ctx.stroke();
+
+    /* 运动标签行 */
+    setFont(ctx, 600, 18, UI_FONT);
+    ctx.fillStyle = '#7D95B3';
+    ctx.fillText('运动 · MOVE', CARD.CX, CARD.EXLABEL + 16);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#8AA0BB';
+    ctx.fillText(groups.length ? '共 ' + groups.length + ' 项' : '今日 0 项', CARD.CR, CARD.EXLABEL + 16);
+    ctx.textAlign = 'left';
+
+    /* 运动内容 */
+    var rowY = CARD.ROWS;
+    if (!groups.length) {
+      ctx.save();
+      ctx.setLineDash([6, 6]);
+      ctx.strokeStyle = '#DCE8F6';
+      ctx.lineWidth = 1.5;
+      rr(ctx, CARD.CX, rowY, CARD.CR - CARD.CX, CARD.EMPTY_H, 18);
+      ctx.stroke();
+      ctx.restore();
+      ctx.textAlign = 'center';
+      setFont(ctx, 500, 23, UI_FONT);
+      ctx.fillStyle = '#8FA3BB';
+      ctx.fillText('今日暂无运动记录', CARD.W / 2, rowY + 50);
+      ctx.textAlign = 'left';
+    } else {
+      groups.forEach(function (group, idx) {
+        var t = group.type;
+        var cy = rowY + 43;
+        /* 圆点 */
+        ctx.fillStyle = t.color;
+        ctx.beginPath();
+        ctx.arc(88, cy - 8, 6, 0, Math.PI * 2);
+        ctx.fill();
+        /* 项目名 */
+        setFont(ctx, 600, 28, UI_FONT);
+        ctx.fillStyle = '#1B304B';
+        ctx.fillText(t.name, 106, cy);
+        /* 今日合计 */
+        ctx.textAlign = 'right';
+        setFont(ctx, 400, 19, UI_FONT);
+        ctx.fillStyle = '#50657F';
+        var sumText = t.mode === 'distance'
+          ? fmtKm(group.km) + ' 公里 · ' + fmtMin(group.min) + ' 分钟'
+          : fmtMin(group.min) + ' 分钟';
+        ctx.fillText(sumText, CARD.CR, cy);
+
+        if (t.id === 'run' && group.km > 0) {
+          setFont(ctx, 400, 17, UI_FONT);
+          ctx.fillStyle = '#8AA0BB';
+          ctx.fillText('平均配速 ' + fmtPace(group.km, group.min) + ' / 公里', CARD.CR, cy + 25);
+        }
+        ctx.textAlign = 'left';
+
+        if (idx < groups.length - 1) {
+          ctx.save();
+          ctx.setLineDash([5, 6]);
+          ctx.strokeStyle = '#EDF3FA';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.moveTo(CARD.CX, rowY + CARD.ROW_H - 3);
+          ctx.lineTo(CARD.CR, rowY + CARD.ROW_H - 3);
+          ctx.stroke();
+          ctx.restore();
+        }
+        rowY += CARD.ROW_H;
+      });
+    }
+
+    var rowsEnd = CARD.ROWS + rowsArea;
+    var tagTop = rowsEnd + CARD.TAG_GAP;
+
+    /* 一句话 */
+    rr(ctx, CARD.CX, tagTop, CARD.CR - CARD.CX, CARD.TAG_H, 18);
+    ctx.fillStyle = '#F2F8FF';
+    ctx.fill();
+    ctx.textAlign = 'center';
+    setFont(ctx, 600, 23, UI_FONT);
+    ctx.fillStyle = '#2F6EA8';
+    ctx.fillText('好好喝水，慢慢变好。', CARD.W / 2, tagTop + 38);
+    ctx.textAlign = 'left';
+
+    /* 页脚 */
+    var footTop = tagTop + CARD.TAG_H + CARD.FOOT_GAP;
+    ctx.textAlign = 'center';
+    setFont(ctx, 500, 16, UI_FONT);
+    ctx.fillStyle = '#A2B4C9';
+    ctx.fillText('DSH-昊哥健康管理 · 每天记录一点点', CARD.W / 2, footTop + 17);
+    ctx.textAlign = 'left';
+
+    return canvas.toDataURL('image/png');
+  }
+
+  function openCardModal() {
+    cardDataUrl = drawCard();
+    var img = $('#cardImg');
+    if (cardDataUrl) {
+      img.src = cardDataUrl;
+      img.alt = '今日记录卡：' + state.nickname + '的饮水与运动记录';
+    }
+    openModal('cardModal');
+  }
+
+  function saveCardImage() {
+    if (!cardDataUrl) {
+      cardDataUrl = drawCard();
+    }
+    if (!cardDataUrl) {
+      showToast('图片生成失败，请刷新后再试');
+      return;
+    }
+    var d = new Date();
+    var name = 'DSH健康记录卡_' + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '.png';
+    var link = document.createElement('a');
+    link.href = cardDataUrl;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    showToast('图片已生成，正在保存');
+  }
+
+  /* ============ 事件绑定 ============ */
+  function bindEvents() {
+    $('#drinkBtn').addEventListener('click', addWater);
+
+    /* 不依赖表单提交：部分内嵌预览会以 sandbox 方式禁用表单提交 */
+    $('#exSubmit').addEventListener('click', function (ev) {
+      ev.preventDefault();
+      submitExercise(ev);
+    });
+    $('#exForm').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      submitExercise(ev);
+    });
+    $('#exForm').addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && ev.target && ev.target.tagName === 'INPUT') {
+        ev.preventDefault();
+        submitExercise(ev);
+      }
+    });
+
+    document.addEventListener('input', function (ev) {
+      if (ev.target && ev.target.matches && ev.target.matches('#exFields input')) {
+        hideFormError();
+      }
+    });
+
+    $('#editNickname').addEventListener('click', openNickname);
+    $('#nickInput').addEventListener('input', function () {
+      updateNickCount();
+      $('#nickError').textContent = '';
+    });
+    $('#nickInput').addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        saveNickname();
+      }
+    });
+    $('#nickSave').addEventListener('click', saveNickname);
+
+    $('#openCard').addEventListener('click', openCardModal);
+    $('#saveCard').addEventListener('click', saveCardImage);
+
+    $$('[data-close]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        closeModal(btn.getAttribute('data-close'));
+      });
+    });
+
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') {
+        closeAllModals();
+        return;
+      }
+      if (ev.key === 'Tab') {
+        var open = $('.modal:not([hidden])');
+        if (!open) return;
+        var sheet = $('.sheet', open);
+        if (!sheet) return;
+        var focusable = getFocusable(sheet);
+        if (!focusable.length) return;
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (ev.shiftKey && document.activeElement === first) {
+          ev.preventDefault();
+          last.focus();
+        } else if (!ev.shiftKey && document.activeElement === last) {
+          ev.preventDefault();
+          first.focus();
+        }
+      }
+    });
+
+    window.addEventListener('storage', function (ev) {
+      if (ev.key === STORAGE_KEY) {
+        state = loadState();
+        renderAll();
+      }
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) checkDayChange();
+    });
+
+    setInterval(checkDayChange, 30000);
+  }
+
+  function checkDayChange() {
+    var key = dateKey();
+    if (key !== currentDay) {
+      currentDay = key;
+      renderAll();
+    }
+  }
+
+  function renderAll() {
+    renderDate();
+    renderProfile();
+    renderWater();
+    renderExercise();
+  }
+
+  /* ============ 启动 ============ */
+  function init() {
+    applyStorageMode();
+    renderDate();
+    renderChips();
+    renderForm();
+    renderProfile();
+    renderWater();
+    renderExercise();
+    bindEvents();
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
