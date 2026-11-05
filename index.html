@@ -1843,7 +1843,7 @@
     var download = $('#downloadCard');
     var file = makeCardFile();
     cardFile = file;
-    var shareOK = IS_MOBILE && !IS_WECHAT && canShareCardFile(file);
+    var shareOK = IS_MOBILE && !IS_WECHAT && !IS_IOS && canShareCardFile(file);
 
     if (!IS_MOBILE) {
       label.textContent = '保存图片（PNG）';
@@ -1856,10 +1856,12 @@
     label.textContent = '保存到相册';
     download.hidden = false;
     setSaveIcon('share');
-    if (shareOK) {
-      hint.textContent = '点保存后，在手机系统面板里选择「存储图像 / 保存到相册」；也可以长按图片。';
-    } else if (IS_WECHAT) {
+    if (IS_WECHAT) {
       hint.textContent = '微信里请长按上方图片 → 选择「保存图片」；也可以点下方「下载 PNG 文件」。';
+    } else if (IS_IOS) {
+      hint.textContent = '点保存后会打开大图：长按图片 → 选择「存储到照片」，即可进入手机相册。';
+    } else if (shareOK) {
+      hint.textContent = '点保存后，在手机系统面板里选择「存储图像 / 保存到相册」；没有这个选项的话，长按图片保存。';
     } else {
       hint.textContent = '手机浏览器不能直接把图片写进相册：点保存会打开大图，长按图片选择「保存图片 / 存储到照片」。';
     }
@@ -1974,8 +1976,12 @@
       downloadCardImage();
       return;
     }
+    if (IS_WECHAT || IS_IOS) {
+      openCardViewer();
+      return;
+    }
     var file = cardFile || makeCardFile();
-    if (!IS_WECHAT && canShareCardFile(file)) {
+    if (canShareCardFile(file)) {
       shareCardFile(file);
       return;
     }
