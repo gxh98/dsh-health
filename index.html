@@ -90,6 +90,9 @@
   }
   .date-chip b{display:block;font-size:12.5px;font-weight:700;color:#28405E;line-height:1.2;font-variant-numeric:tabular-nums}
   .date-chip span{display:block;font-size:9.5px;color:#8CA0B9;margin-top:2px;letter-spacing:.6px}
+  .date-chip.is-history{background:#FFF9EC;border-color:#F2DDAE;box-shadow:0 4px 14px -10px rgba(150,100,20,.35)}
+  .date-chip.is-history b{color:#7D5917}
+  .date-chip.is-history span{color:#B28A45}
 
   /* ---------- 通用卡片 ---------- */
   .card{
@@ -139,6 +142,50 @@
     margin:7px 0 0;font-size:11.5px;line-height:1.5;color:#8498B0;
     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
+
+  /* ---------- 历史 / 补记日期 ---------- */
+  .date-card{padding:16px 18px 14px}
+  .date-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+  .date-card h2{margin:5px 0 0;font-size:18px;line-height:1.25;font-weight:800;color:#162C49}
+  .today-btn{
+    flex:none;height:30px;padding:0 11px;border-radius:10px;
+    border:1px solid #DCEAFB;background:#F3F9FF;color:#3E7DB8;
+    font-size:10.5px;font-weight:700;cursor:pointer;
+    transition:background .16s,border-color .16s,color .16s,transform .16s;
+  }
+  .today-btn:hover{background:#E7F3FF;border-color:#C6E2FF;color:#0A6DFF}
+  .today-btn:active{transform:scale(.96)}
+  .today-btn[hidden]{display:none !important}
+  .date-picker-row{
+    display:flex;align-items:center;gap:10px;
+    margin-top:12px;padding:8px 11px;
+    background:#F7FAFE;border:1px solid #E9F1FA;border-radius:13px;
+  }
+  .date-picker-label{
+    flex:none;font-size:10.5px;font-weight:650;color:#7C8FA7;
+    white-space:nowrap;
+  }
+  .date-input{
+    flex:1;min-width:0;border:0;background:transparent;
+    padding:2px 0;margin:0;
+    font-family:var(--font-num);font-size:15px;font-weight:650;color:#173153;
+    outline:none;cursor:pointer;
+  }
+  .date-input::-webkit-calendar-picker-indicator{opacity:.55;cursor:pointer}
+  .date-input:focus-visible{outline:2px solid var(--water);outline-offset:2px;border-radius:5px}
+  .date-mode{
+    margin:9px 2px 0;font-size:10.5px;line-height:1.5;color:#7F93AB;
+  }
+  .date-mode.is-history{color:#0A6DFF;font-weight:600}
+  .date-empty{
+    display:flex;flex-direction:column;gap:3px;
+    margin:10px 0 0;padding:10px 12px;
+    border-radius:12px;background:#FAFCFF;
+    border:1px dashed #DFE9F4;
+  }
+  .date-empty b{font-size:12px;font-weight:750;color:#5B728E}
+  .date-empty span{font-size:10.5px;color:#95A6BB;line-height:1.5}
+  .date-empty[hidden]{display:none !important}
 
   /* ---------- 饮水 ---------- */
   .water-card::before{
@@ -656,6 +703,26 @@
       </div>
     </section>
 
+    <!-- 历史 / 补记日期 -->
+    <section class="card date-card" aria-labelledby="dateCardTitle">
+      <div class="date-card-head">
+        <div>
+          <p class="eyebrow">Date · 日期</p>
+          <h2 id="dateCardTitle">今天</h2>
+        </div>
+        <button type="button" class="today-btn" id="todayBtn" hidden>回到今天</button>
+      </div>
+      <div class="date-picker-row">
+        <label class="date-picker-label" for="datePicker">查看 / 补记日期</label>
+        <input class="date-input" id="datePicker" type="date" aria-label="选择查看和补记的日期">
+      </div>
+      <p class="date-mode" id="dateMode">新记录会记到今天（北京时间）。</p>
+      <div class="date-empty" id="dateEmpty" hidden>
+        <b>暂无记录</b>
+        <span>这一天没有饮水或运动记录，可以在下方补记。</span>
+      </div>
+    </section>
+
     <!-- 今日饮水 -->
     <section class="card water-card" aria-labelledby="waterTitle">
       <div class="card-head">
@@ -731,7 +798,7 @@
     <button type="button" class="card-cta" id="openCard">
       <span class="cta-spark" aria-hidden="true">✦</span>
       <span class="cta-text">
-        <b>生成今日记录卡</b>
+        <b id="cardCtaTitle">生成今日记录卡</b>
         <small>头像 · 饮水 · 运动，一张图存下来</small>
       </span>
       <span class="cta-arrow" aria-hidden="true">→</span>
@@ -754,7 +821,7 @@
     <div class="sheet-grabber" aria-hidden="true"></div>
     <button type="button" class="sheet-close" data-close="nickModal" aria-label="关闭">×</button>
     <h2 id="nickTitle">修改昵称</h2>
-    <p class="sheet-sub">昵称会显示在首页和今日记录卡上。</p>
+    <p class="sheet-sub">昵称会显示在首页和记录卡上。</p>
     <label class="nick-field">
       <span class="field-label" style="margin:0 0 7px 2px;display:block;font-size:10.5px;font-weight:650;color:#7C8FA7;">今天的称呼</span>
       <input class="nick-input" id="nickInput" type="text" maxlength="12" autocomplete="off" placeholder="健康记录员" aria-describedby="nickError">
@@ -777,8 +844,7 @@
     <div class="sheet-grabber" aria-hidden="true"></div>
     <div class="card-modal-head">
       <h2 id="cardTitle">今日记录卡</h2>
-      <p class="sheet-sub">预览就是保存后的效果，一点不差。</p>
-    </div>
+      <p class="sheet-sub">预览就是保存后的效果，一点不差。</p>    </div>
     <button type="button" class="sheet-close" data-close="cardModal" aria-label="关闭">×</button>
     <div class="card-preview">
       <img id="cardImg" alt="今日记录卡预览">
@@ -837,24 +903,62 @@
     return n;
   }
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
-  function dateKey(d) {
-    d = d || new Date();
-    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+
+  /* 所有“今天/日期选择/新记录日期”统一按北京时间（UTC+8）计算 */
+  var BEIJING_OFFSET_MS = 8 * 60 * 60 * 1000;
+  function getBeijingParts(date) {
+    var d = new Date((date ? date.getTime() : Date.now()) + BEIJING_OFFSET_MS);
+    return {
+      year: d.getUTCFullYear(),
+      month: d.getUTCMonth() + 1,
+      day: d.getUTCDate(),
+      weekday: d.getUTCDay()
+    };
+  }
+  function beijingDateKey(date) {
+    var p = getBeijingParts(date);
+    return p.year + '-' + pad2(p.month) + '-' + pad2(p.day);
+  }
+  function dateKey(date) {
+    return beijingDateKey(date);
+  }
+  function parseDateKey(key) {
+    var match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key || '');
+    if (!match) return null;
+    var y = Number(match[1]);
+    var m = Number(match[2]);
+    var d = Number(match[3]);
+    var check = new Date(Date.UTC(y, m - 1, d));
+    if (check.getUTCFullYear() !== y || check.getUTCMonth() !== m - 1 || check.getUTCDate() !== d) return null;
+    return { year: y, month: m, day: d, weekday: check.getUTCDay() };
+  }
+  function weekdayName(index) {
+    return ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][index] || '';
+  }
+  function formatDateCN(key, withYear) {
+    var p = parseDateKey(key);
+    if (!p) return String(key || '');
+    return (withYear ? p.year + '年' : '') + p.month + '月' + p.day + '日';
   }
   function uid() {
     return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
-  function todayEntries() {
-    var key = dateKey();
+  function entriesForDate(key) {
     return state.entries.filter(function (e) { return e.date === key; });
+  }
+  function selectedEntries() {
+    return entriesForDate(selectedDateKey);
+  }
+  function isSelectedToday() {
+    return selectedDateKey === currentTodayKey;
   }
   function typeById(id) {
     for (var i = 0; i < TYPES.length; i++) if (TYPES[i].id === id) return TYPES[i];
     return null;
   }
   function fmtTime(ts) {
-    var d = new Date(ts);
-    return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+    var d = new Date(Number(ts) + BEIJING_OFFSET_MS);
+    return pad2(d.getUTCHours()) + ':' + pad2(d.getUTCMinutes());
   }
   function fmtKm(n) {
     var v = Number(n) || 0;
@@ -934,12 +1038,25 @@
   /* ============ 状态 ============ */
   var state = loadState();
   var STORAGE_OK = canUseStorage();
+  var currentTodayKey = beijingDateKey();
+  var selectedDateKey = currentTodayKey;
   var selectedType = TYPES[0].id;
-  var currentDay = dateKey();
   var lastFocus = null;
   var cardDataUrl = '';
   var cardFile = null;
   var sharingCard = false;
+
+  function syncBeijingToday() {
+    var today = beijingDateKey();
+    if (today === currentTodayKey) return false;
+    var wasViewingToday = selectedDateKey === currentTodayKey;
+    currentTodayKey = today;
+    if (wasViewingToday) selectedDateKey = today;
+    return true;
+  }
+  function refreshTodayIfNeeded() {
+    if (syncBeijingToday()) renderAll();
+  }
 
   var IS_MOBILE = (function () {
     var ua = navigator.userAgent || '';
@@ -978,15 +1095,44 @@
 
   /* ============ 日期 & 个人信息 ============ */
   function renderDate() {
-    var d = new Date();
-    $('#topDate').textContent = (d.getMonth() + 1) + '月' + d.getDate() + '日';
-    var week = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()];
-    $('#topWeek').textContent = week;
+    var sel = parseDateKey(selectedDateKey) || getBeijingParts();
+    var isToday = isSelectedToday();
+    $('#topDate').textContent = sel.month + '月' + sel.day + '日';
+    $('#topWeek').textContent = weekdayName(sel.weekday) + (isToday ? '' : ' · 历史');
+    var chip = $('.date-chip');
+    if (chip) {
+      chip.classList.toggle('is-history', !isToday);
+      chip.setAttribute('aria-label', '当前查看日期：' + formatDateCN(selectedDateKey, true) + (isToday ? '（今天）' : '（历史）'));
+    }
+    var picker = $('#datePicker');
+    if (picker) {
+      picker.value = selectedDateKey;
+      picker.max = currentTodayKey;
+    }
+    var title = $('#dateCardTitle');
+    if (title) title.textContent = isToday ? '今天' : '历史记录';
+    var mode = $('#dateMode');
+    if (mode) {
+      mode.textContent = isToday
+        ? '新记录会记到今天（北京时间）。'
+        : '补记模式：记到 ' + formatDateCN(selectedDateKey) + '（北京时间），不计入今天。';
+      mode.classList.toggle('is-history', !isToday);
+    }
+    var todayBtn = $('#todayBtn');
+    if (todayBtn) todayBtn.hidden = isToday;
+    var empty = $('#dateEmpty');
+    if (empty) empty.hidden = selectedEntries().length > 0;
+    var waterTitle = $('#waterTitle');
+    if (waterTitle) waterTitle.textContent = isToday ? '今日饮水' : '当日饮水';
+    var exTitle = $('#exTitle');
+    if (exTitle) exTitle.textContent = isToday ? '今日运动' : '当日运动';
+    var ctaTitle = $('#cardCtaTitle');
+    if (ctaTitle) ctaTitle.textContent = isToday ? '生成今日记录卡' : '生成当日记录卡';
   }
 
   function renderProfile() {
     $('#nickname').textContent = state.nickname;
-    var entries = todayEntries();
+    var entries = selectedEntries();
     var water = entries.filter(function (e) { return e.kind === 'water'; });
     var ex = entries.filter(function (e) { return e.kind === 'exercise'; });
     var cups = Math.round(water.reduce(function (s, e) { return s + (e.ml || 0); }, 0) / WATER_PER_CUP);
@@ -996,14 +1142,19 @@
     var parts = [];
     if (cups > 0) parts.push('喝了 ' + cups + ' 杯水');
     if (exTypeCount > 0) parts.push('运动 ' + exTypeCount + ' 项');
-    $('#greeting').textContent = parts.length
-      ? '今天已' + parts.join(' · ') + '，继续保持'
-      : '今天也要好好喝水、动一动';
+    var isToday = isSelectedToday();
+    var dayName = formatDateCN(selectedDateKey);
+    if (parts.length) {
+      $('#greeting').textContent = (isToday ? '今天已' : dayName + '已') + parts.join(' · ') + '，继续保持';
+    } else {
+      $('#greeting').textContent = isToday ? '今天也要好好喝水、动一动' : dayName + '暂无记录，可以补记';
+    }
   }
 
   /* ============ 饮水 ============ */
   function renderWater() {
-    var entries = todayEntries()
+    var isToday = isSelectedToday();
+    var entries = entriesForDate(selectedDateKey)
       .filter(function (e) { return e.kind === 'water'; })
       .sort(function (a, b) { return b.ts - a.ts; });
     var total = entries.reduce(function (s, e) { return s + (e.ml || 0); }, 0);
@@ -1020,16 +1171,17 @@
     if (total >= WATER_GOAL) {
       remainEl.textContent = extra > 0
         ? '目标已完成 · 超出 ' + fmtNum(extra) + ' ml'
-        : '今日目标已完成 🎉';
+        : (isToday ? '今日目标已完成 🎉' : '当日目标已完成 🎉');
     } else {
       remainEl.textContent = '还差 ' + fmtNum(remain) + ' ml';
     }
     var cups = Math.round(total / WATER_PER_CUP);
     $('#waterNote').textContent = '已喝 ' + cups + ' 杯 · 目标 ' + (WATER_GOAL / WATER_PER_CUP) + ' 杯';
-    $('#ringWrap').setAttribute('aria-label', '今日饮水完成 ' + pct + '%');
+    $('#ringWrap').setAttribute('aria-label', (isToday ? '今日' : '当日') + '饮水完成 ' + pct + '%');
 
     var C = 2 * Math.PI * 60;
     var ring = $('#ringFill');
+    ring.style.opacity = total > 0 ? '1' : '0';
     ring.style.strokeDasharray = C.toFixed(2);
     ring.style.strokeDashoffset = (C * (1 - capped)).toFixed(2);
 
@@ -1059,22 +1211,24 @@
   }
 
   function addWater() {
+    refreshTodayIfNeeded();
+    var targetDate = selectedDateKey;
     state.entries.push({
       id: uid(),
       kind: 'water',
-      date: dateKey(),
+      date: targetDate,
       ts: Date.now(),
       ml: WATER_PER_CUP
     });
     saveState();
-    renderWater();
-    renderProfile();
+    renderAll();
     floatPlus();
     var totalEl = $('#waterTotal');
     totalEl.classList.remove('pop');
     void totalEl.offsetWidth;
     totalEl.classList.add('pop');
-    showToast('已记录 +250 ml 饮水' + persistHint());
+    var prefix = targetDate === currentTodayKey ? '已记录 ' : '已补记到 ' + formatDateCN(targetDate) + ' · ';
+    showToast(prefix + '+250 ml 饮水' + persistHint());
   }
 
   function floatPlus() {
@@ -1163,6 +1317,7 @@
 
   function submitExercise(ev) {
     if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+    refreshTodayIfNeeded();
     var t = currentType();
     var kmInput = $('#kmInput');
     var minInput = $('#minInput');
@@ -1189,11 +1344,12 @@
     }
 
     var minutes = Math.round(minRaw * 10) / 10;
+    var targetDate = selectedDateKey;
     var entry = {
       id: uid(),
       kind: 'exercise',
       type: t.id,
-      date: dateKey(),
+      date: targetDate,
       ts: Date.now(),
       min: minutes
     };
@@ -1208,14 +1364,15 @@
     hideFormError();
     if (kmInput) kmInput.value = '';
     if (minInput) minInput.value = '';
-    renderExercise();
-    renderProfile();
-    showToast('已记录 · ' + t.name + ' ' + badge + persistHint());
+    renderAll();
+    var prefix = targetDate === currentTodayKey ? '已记录 · ' : '已补记到 ' + formatDateCN(targetDate) + ' · ';
+    showToast(prefix + t.name + ' ' + badge + persistHint());
   }
 
   /* ============ 运动：合计与记录 ============ */
   function renderExercise() {
-    var entries = todayEntries().filter(function (e) { return e.kind === 'exercise'; });
+    var isToday = isSelectedToday();
+    var entries = entriesForDate(selectedDateKey).filter(function (e) { return e.kind === 'exercise'; });
     var groups = [];
     TYPES.forEach(function (t) {
       var rows = entries.filter(function (e) { return e.type === t.id; })
@@ -1223,7 +1380,8 @@
       if (rows.length) groups.push({ type: t, rows: rows });
     });
 
-    $('#exCount').textContent = groups.length ? '今日 ' + groups.length + ' 项' : '今日 0 项';
+    var dayWord = isToday ? '今日' : '当日';
+    $('#exCount').textContent = dayWord + ' ' + groups.length + ' 项';
 
     var wrap = $('#exTotals');
     wrap.innerHTML = '';
@@ -1232,8 +1390,8 @@
       var empty = el('div', 'ex-empty');
       var icon = el('span', 'empty-icon', '🌿');
       empty.appendChild(icon);
-      var p = el('p', null, '今日暂无运动记录');
-      var small = el('small', null, '选一个项目，记录今天的第一次运动');
+      var p = el('p', null, isToday ? '今日暂无运动记录' : '当日暂无运动记录');
+      var small = el('small', null, isToday ? '选一个项目，记录今天的第一次运动' : '选一个项目，记录这一天的运动');
       empty.appendChild(p);
       empty.appendChild(small);
       wrap.appendChild(empty);
@@ -1256,9 +1414,9 @@
       name.appendChild(document.createTextNode(t.name));
       var sum = el('div', 'ex-sum');
       if (t.mode === 'distance') {
-        sum.innerHTML = '今日 <b>' + fmtKm(totalKm) + '</b> 公里 · <b>' + fmtMin(totalMin) + '</b> 分钟';
+        sum.innerHTML = dayWord + ' <b>' + fmtKm(totalKm) + '</b> 公里 · <b>' + fmtMin(totalMin) + '</b> 分钟';
       } else {
-        sum.innerHTML = '今日 <b>' + fmtMin(totalMin) + '</b> 分钟';
+        sum.innerHTML = dayWord + ' <b>' + fmtMin(totalMin) + '</b> 分钟';
       }
       head.appendChild(name);
       head.appendChild(sum);
@@ -1266,7 +1424,7 @@
 
       if (t.id === 'run' && totalKm > 0) {
         var pace = el('div', 'ex-pace');
-        pace.innerHTML = '今日平均配速 <b>' + fmtPace(totalKm, totalMin) + '</b> / 公里';
+        pace.innerHTML = dayWord + '平均配速 <b>' + fmtPace(totalKm, totalMin) + '</b> / 公里';
         box.appendChild(pace);
       }
 
@@ -1308,9 +1466,7 @@
     if (idx < 0) return;
     var removed = state.entries.splice(idx, 1)[0];
     saveState();
-    renderWater();
-    renderExercise();
-    renderProfile();
+    renderAll();
     var label = '一条记录';
     if (removed.kind === 'water') {
       label = '250 ml 饮水';
@@ -1321,7 +1477,8 @@
         if (typeof removed.km !== 'undefined') label += '（' + fmtKm(removed.km) + ' 公里）';
       }
     }
-    showToast('已撤销 · ' + label);
+    var prefix = isSelectedToday() ? '' : formatDateCN(selectedDateKey) + ' ';
+    showToast('已撤销 · ' + prefix + label);
   }
 
   /* ============ 昵称弹层 ============ */
@@ -1454,7 +1611,7 @@
   }
 
   function drawCard() {
-    var entries = todayEntries();
+    var entries = selectedEntries();
     var waterEntries = entries.filter(function (e) { return e.kind === 'water'; });
     var water = waterEntries.reduce(function (s, e) { return s + (e.ml || 0); }, 0);
     var ratio = water / WATER_GOAL;
@@ -1463,6 +1620,7 @@
     var remain = Math.max(0, WATER_GOAL - water);
     var extra = Math.max(0, water - WATER_GOAL);
     var cups = Math.round(water / WATER_PER_CUP);
+    var isToday = isSelectedToday();
 
     var groups = [];
     TYPES.forEach(function (t) {
@@ -1555,7 +1713,7 @@
     setFont(ctx, 600, 15, UI_FONT);
     ctx.fillStyle = '#9DB2C9';
     ctx.textAlign = 'right';
-    ctx.fillText('今日记录卡', CARD.CR, 101);
+    ctx.fillText(isToday ? '今日记录卡' : '当日记录卡', CARD.CR, 101);
     ctx.textAlign = 'left';
 
     /* 头像 */
@@ -1593,11 +1751,11 @@
     ctx.fillStyle = '#14283F';
     ctx.fillText(fitted.text, 212, 192);
 
-    var now = new Date();
-    var week = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][now.getDay()];
+    var now = parseDateKey(selectedDateKey) || getBeijingParts();
+    var week = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][now.weekday];
     setFont(ctx, 400, 20, UI_FONT);
     ctx.fillStyle = '#7E93AD';
-    ctx.fillText(now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日 · ' + week, 212, 228);
+    ctx.fillText(now.year + '年' + now.month + '月' + now.day + '日 · ' + week, 212, 228);
 
     /* 分割线 1 */
     ctx.strokeStyle = '#EAF1F9';
@@ -1795,8 +1953,7 @@
   }
 
   function cardFileName() {
-    var d = new Date();
-    return 'DSH健康记录卡_' + d.getFullYear() + pad2(d.getMonth() + 1) + pad2(d.getDate()) + '.png';
+    return 'DSH健康记录卡_' + selectedDateKey.replace(/-/g, '') + '.png';
   }
 
   function dataURLToBlob(dataUrl) {
@@ -1878,7 +2035,7 @@
     var viewer = $('#cardViewer');
     var img = $('#viewerImg');
     img.src = cardDataUrl;
-    img.alt = '今日记录卡大图：' + (state.nickname || DEFAULT_NICKNAME) + '的饮水与运动记录';
+    img.alt = (isSelectedToday() ? '今日记录卡大图：' : '当日记录卡大图：') + (state.nickname || DEFAULT_NICKNAME) + '的饮水与运动记录';
     var hint = $('#viewerHint');
     if (IS_WECHAT) {
       hint.textContent = '长按图片 → 选择「保存图片」，就会进入手机相册';
@@ -1942,8 +2099,8 @@
     try {
       promise = navigator.share({
         files: [file],
-        title: '今日记录卡 · DSH-昊哥健康管理',
-        text: '我的今日饮水与运动记录'
+        title: (isSelectedToday() ? '今日记录卡' : '当日记录卡') + ' · DSH-昊哥健康管理',
+        text: '我的饮水与运动记录'
       });
     } catch (err) {
       sharingCard = false;
@@ -1991,10 +2148,13 @@
   function openCardModal() {
     cardDataUrl = drawCard();
     cardFile = null;
+    var isToday = isSelectedToday();
     var img = $('#cardImg');
+    var title = $('#cardTitle');
+    if (title) title.textContent = isToday ? '今日记录卡' : '当日记录卡';
     if (cardDataUrl) {
       img.src = cardDataUrl;
-      img.alt = '今日记录卡：' + state.nickname + '的饮水与运动记录';
+      img.alt = (isToday ? '今日记录卡：' : '当日记录卡：') + state.nickname + '的饮水与运动记录';
     }
     configureCardSaveUI();
     openModal('cardModal');
@@ -2048,6 +2208,9 @@
     $('#cardViewer').addEventListener('click', function (ev) {
       if (ev.target === this) closeCardViewer();
     });
+
+    $('#datePicker').addEventListener('change', onDateChange);
+    $('#todayBtn').addEventListener('click', goToday);
 
     $$('[data-close]').forEach(function (btn) {
       btn.addEventListener('click', function () {
@@ -2114,11 +2277,30 @@
   }
 
   function checkDayChange() {
-    var key = dateKey();
-    if (key !== currentDay) {
-      currentDay = key;
-      renderAll();
+    if (syncBeijingToday()) renderAll();
+  }
+
+  function onDateChange() {
+    syncBeijingToday();
+    var picker = $('#datePicker');
+    var value = picker ? picker.value : '';
+    if (!value || !parseDateKey(value)) {
+      if (picker) picker.value = selectedDateKey;
+      return;
     }
+    if (value > currentTodayKey) {
+      if (picker) picker.value = selectedDateKey;
+      showToast('只能选择今天或过去的日期');
+      return;
+    }
+    selectedDateKey = value;
+    renderAll();
+  }
+
+  function goToday() {
+    currentTodayKey = beijingDateKey();
+    selectedDateKey = currentTodayKey;
+    renderAll();
   }
 
   function renderAll() {
